@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include "raylib.h"
 
+#define MIN -1
+#define MAX -2
+#define ABS(value) (value)
 // ====== Config Constants ======
 #define MAX_LAYOUT_STACK 16
 
@@ -28,12 +31,6 @@ typedef enum {
     LAYOUT_HBOX
 } LayoutMode;
 
-typedef struct {
-    LayoutMode mode;
-    gridrect cursor;
-    gridrect origin;
-} LayoutContext;
-
 // ====== Macros ======
 #define TILE(x, y) ((atlaspos){ (x), (y) })
 #define TILE_A (TILE(13, 13))
@@ -42,7 +39,15 @@ typedef struct {
 #define R(x, y, w, h) ((gridrect){ (x), (y), (w), (h) })
 #define AUTO ((gridrect){ -1, -1, 0, 1 })
 
+
 // ====== Style ======
+typedef struct {
+    LayoutMode mode;
+    gridrect cursor;
+    gridrect origin;
+    gridrect requested; // <- stores original layout request (incl. sizing hints)
+} LayoutContext;
+
 typedef struct {
     Color background;
     Color foreground;
@@ -54,8 +59,11 @@ typedef struct {
 #define STYLE_BW    (tm_style){ .background = BLACK, .foreground = WHITE, .border = WHITE, .border_width = 1 }
 
 // ====== Layout System ======
-void tm_push_layout(LayoutMode mode, int x, int y);
+void tm_push_layout(LayoutMode mode, gridrect anchor, gridrect requested);
 void tm_pop_layout(void);
+
+int tm_resolve_axis(int value, int fallback, int available);
+
 gridrect tm_next_cell(int w, int h);
 
 // ====== API ======
