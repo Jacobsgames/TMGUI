@@ -1,33 +1,23 @@
-// tmgui.c
 #include "tmgui.h"
 #include "raylib.h"
 #include <string.h>
 
-// ——— Internal State ———
 #define MAX_LAYOUT_STACK 16
 static LayoutContext layout_stack[MAX_LAYOUT_STACK];
-static int          layout_stack_top = -1;
+static int           layout_stack_top = -1;
 
-// Constants
 #define TILE_SIZE   8
 #define GRID_WIDTH  80
 #define GRID_HEIGHT 45
 #define FRAME_WIDTH  (GRID_WIDTH * TILE_SIZE)
 #define FRAME_HEIGHT (GRID_HEIGHT * TILE_SIZE)
 
-static tm_style     current_style;
-static Font         current_font;
-static Texture2D    tile_atlas;
-static bool         inited = false;
+static tm_style  current_style;
+static Font      current_font;
+static Texture2D tile_atlas;
+static bool      inited = false;
 
-// ——— Helpers ———
-static LayoutContext *current_ctx(void) {
-    if (layout_stack_top < 0) return NULL;
-    return &layout_stack[layout_stack_top];
-}
-
-
-// globals to hold your last‐computed scale & offsets
+// track mouse transform
 static int g_tm_scale, g_tm_offX, g_tm_offY;
 
 void tm_update_transform(int scale, int offX, int offY) {
@@ -36,61 +26,55 @@ void tm_update_transform(int scale, int offX, int offY) {
     g_tm_offY  = offY;
 }
 
-
-
-
-// Now this returns pointer coords *in grid pixels*:
 Vector2 tm_mouse_grid(void) {
     Vector2 m = GetMousePosition();
-    // undo letterbox:
-    float px = (m.x - g_tm_offX)  / (float)g_tm_scale;
-    float py = (m.y - g_tm_offY)  / (float)g_tm_scale;
-    // convert to tile units:
-    return (Vector2){ px / TILE_SIZE, py / TILE_SIZE };
+    float px = (m.x - g_tm_offX)/(float)g_tm_scale;
+    float py = (m.y - g_tm_offY)/(float)g_tm_scale;
+    return (Vector2){ px/TILE_SIZE, py/TILE_SIZE };
 }
 
-// ——— Layout API ———
+static LayoutContext *current_ctx(void) {
+    return layout_stack_top >= 0
+         ? &layout_stack[layout_stack_top]
+         : NULL;
+}
+
 gridrect tm_next_cell(int w, int h) {
     LayoutContext *ctx = current_ctx();
-    if (!ctx) {
-        // no container: place at 0,0
-        return (gridrect){ 0, 0, w, h };
-    }
-    // compute at origin + cursor
+    if (!ctx) return (gridrect){0,0,w,h};
     int x = ctx->origin.x + ctx->cursor_x;
     int y = ctx->origin.y + ctx->cursor_y;
-    // advance cursor based on mode
-    if (ctx->mode == LAYOUT_HBOX) {
-        ctx->cursor_x += w;
-    } else if (ctx->mode == LAYOUT_VBOX) {
-        ctx->cursor_y += h;
-    }
+    if (ctx->mode == LAYOUT_HBOX) ctx->cursor_x += w;
+    else                          ctx->cursor_y += h;
     return (gridrect){ x, y, w, h };
 }
 
 void tm_vbox(gridrect r) {
-    // determine anchor
-    int ax = (r.x < 0 ? tm_next_cell(0,0).x : r.x);
-    int ay = (r.y < 0 ? tm_next_cell(0,0).y : r.y);
+    int ax = (r.x<0 ? tm_next_cell(0,0).x : r.x);
+    int ay = (r.y<0 ? tm_next_cell(0,0).y : r.y);
     if (layout_stack_top < MAX_LAYOUT_STACK-1) {
         layout_stack[++layout_stack_top] = (LayoutContext){
-            .mode     = LAYOUT_VBOX,
-            .origin   = { ax, ay, 0, 0 },
-            .cursor_x = 0,
-            .cursor_y = 0,
+            .mode      = LAYOUT_VBOX,
+            .origin    = { ax, ay, 0,0 },
+            .cursor_x  = 0,
+            .cursor_y  = 0,
+            .align     = TM_ALIGN_LEFT,
+            .requested = r
         };
     }
 }
 
 void tm_hbox(gridrect r) {
-    int ax = (r.x < 0 ? tm_next_cell(0,0).x : r.x);
-    int ay = (r.y < 0 ? tm_next_cell(0,0).y : r.y);
+    int ax = (r.x<0 ? tm_next_cell(0,0).x : r.x);
+    int ay = (r.y<0 ? tm_next_cell(0,0).y : r.y);
     if (layout_stack_top < MAX_LAYOUT_STACK-1) {
         layout_stack[++layout_stack_top] = (LayoutContext){
-            .mode     = LAYOUT_HBOX,
-            .origin   = { ax, ay, 0, 0 },
-            .cursor_x = 0,
-            .cursor_y = 0,
+            .mode      = LAYOUT_HBOX,
+            .origin    = { ax, ay, 0,0 },
+            .cursor_x  = 0,
+            .cursor_y  = 0,
+            .align     = TM_ALIGN_LEFT,
+            .requested = r
         };
     }
 }
@@ -99,16 +83,12 @@ void tm_end_box(void) {
     if (layout_stack_top >= 0) layout_stack_top--;
 }
 
-// ——— Core API ———
 void tmgui_init(void) {
     if (inited) return;
-    // load a default font (adjust path as needed)
-    current_font = LoadFontEx("C:/Code/tmgui/fonts/FROGBLOCK.ttf", 8, NULL, 0);
+    current_font = LoadFontEx("C:/Code/tmgui/fonts/FROGBLOCK.ttf", TILE_SIZE, NULL, 0);
     SetTextureFilter(current_font.texture, TEXTURE_FILTER_POINT);
-    // load atlas (optional—only if you call tm_drawtile)
-    tile_atlas = LoadTexture("C:/Code/tmgui/tiles/T_FROGBLOCK.png");
+    tile_atlas   = LoadTexture("C:/Code/tmgui/tiles/T_FROGBLOCK.png");
     SetTextureFilter(tile_atlas, TEXTURE_FILTER_POINT);
-    // default style
     current_style = STYLE_TMGUI;
     inited = true;
 }
@@ -128,195 +108,153 @@ void tm_set_font(Font font) {
     current_font = font;
 }
 
-// ——— Drawing Primitives ———
+tm_canvas tm_canvas_init(int grid_w, int grid_h, bool transparent) {
+    tm_canvas c = {0};
+    c.grid_w = grid_w; c.grid_h = grid_h; c.transparent = transparent;
+    c.target = LoadRenderTexture(grid_w*TILE_SIZE, grid_h*TILE_SIZE);
+    SetTextureFilter(c.target.texture, TEXTURE_FILTER_POINT);
+    return c;
+}
+
+void tm_canvas_begin(tm_canvas *c) {
+    BeginTextureMode(c->target);
+    ClearBackground(c->transparent ? BLANK : BLACK);
+}
+
+void tm_canvas_end(tm_canvas *c) {
+    EndTextureMode();
+    int sw = GetScreenWidth(), sh = GetScreenHeight();
+    int sx = sw/(c->grid_w*TILE_SIZE), sy = sh/(c->grid_h*TILE_SIZE);
+    c->scale = sx<sy? sx: sy; if (c->scale<1) c->scale=1;
+    int dw = c->grid_w*TILE_SIZE*c->scale;
+    int dh = c->grid_h*TILE_SIZE*c->scale;
+    c->offset_x = (sw-dw)/2; c->offset_y = (sh-dh)/2;
+    tm_update_transform(c->scale, c->offset_x, c->offset_y);
+    DrawTexturePro(c->target.texture,
+                   (Rectangle){0,0,c->grid_w*TILE_SIZE,-c->grid_h*TILE_SIZE},
+                   (Rectangle){c->offset_x,c->offset_y,dw,dh},
+                   (Vector2){0,0},0,WHITE);
+}
+
 void tm_rect(gridrect r) {
-    int px = r.x * 8, py = r.y * 8;
-    int pw = r.w * 8, ph = r.h * 8;
-    DrawRectangle(px, py, pw, ph, current_style.background);
-    if (current_style.border_width > 0) {
+    DrawRectangle(r.x*TILE_SIZE,r.y*TILE_SIZE,r.w*TILE_SIZE,r.h*TILE_SIZE,
+                  current_style.background);
+    if (current_style.border_width>0)
         DrawRectangleLinesEx(
-            (Rectangle){ px, py, pw, ph },
+            (Rectangle){r.x*TILE_SIZE,r.y*TILE_SIZE,r.w*TILE_SIZE,r.h*TILE_SIZE},
             current_style.border_width,
-            current_style.border
-        );
-    }
+            current_style.border);
 }
 
 void tm_label(const char *text, int x, int y, Color c) {
-    Vector2 pos = { x*8.f, y*8.f };
-    DrawTextEx(current_font, text, pos, 8, 0, c);
+    DrawTextEx(current_font,text,(Vector2){x*TILE_SIZE,y*TILE_SIZE},
+               TILE_SIZE,0,c);
 }
 
 bool tm_button(const char *label, gridrect r) {
-    // 1) measure/position exactly as you already do...
-    int txtw = MeasureTextEx(current_font, label, 8, 0).x / 8;
-    int w    = (r.w>0 ? r.w : txtw+2), h = (r.h>0 ? r.h : 1);
-    gridrect use = (r.x<0 && r.y<0) ? tm_next_cell(w,h) : (gridrect){r.x,r.y,w,h};
-
-    // 2) build a screen‐pixel rectangle for input checks
+    // 1) measure
+    int txtw = MeasureTextEx(current_font,label,TILE_SIZE,0).x/TILE_SIZE;
+    int w = (r.w>0? r.w: txtw+2), h = (r.h>0? r.h:1);
+    // 2) position
+    LayoutContext *ctx = current_ctx();
+    gridrect use = (r.x<0&&r.y<0)? tm_next_cell(w,h) : (gridrect){r.x,r.y,w,h};
+    // 3) alignment (VBOX only)
+    if (ctx && ctx->mode==LAYOUT_VBOX) {
+        int cw = (ctx->requested.w>0? ctx->requested.w: ctx->cursor_x);
+        switch(ctx->align) {
+            case TM_ALIGN_CENTER:
+                use.x = ctx->origin.x + (cw - use.w)/2; break;
+            case TM_ALIGN_RIGHT:
+                use.x = ctx->origin.x + (cw - use.w);    break;
+            case TM_ALIGN_FILL:
+                use.x = ctx->origin.x; use.w = cw;        break;
+            default: break;
+        }
+    }
+    // 4) input
     Vector2 mg = tm_mouse_grid();
-Rectangle pr = {
-    use.x * 1.f, use.y * 1.f,
-    use.w * 1.f, use.h * 1.f
-};
-    bool over    = CheckCollisionPointRec(mg, pr);
-    bool     pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-    bool     clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
-
-    // 3) pick a style based on state
+    Rectangle pr = {use.x, use.y, use.w, use.h};
+    bool over = CheckCollisionPointRec(mg,pr);
+    bool pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    bool clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    // 5) style
     const tm_style *sty = &STYLE_BTN_NORMAL;
-    if      (pressed) sty = &STYLE_BTN_ACTIVE;
-    else if (over)    sty = &STYLE_BTN_HOVER;
-
-    // 4) draw with that style
-    DrawRectangle(use.x*8, use.y*8, use.w*8, use.h*8, sty->background);
+    if (pressed) sty = &STYLE_BTN_ACTIVE;
+    else if (over) sty = &STYLE_BTN_HOVER;
+    // 6) draw
+    DrawRectangle(use.x*TILE_SIZE,use.y*TILE_SIZE,use.w*TILE_SIZE,use.h*TILE_SIZE,sty->background);
     if (sty->border_width>0)
-        DrawRectangleLinesEx((Rectangle){use.x*8, use.y*8, use.w*8, use.h*8},
-                             sty->border_width, sty->border);
-    DrawTextEx(current_font, label, (Vector2){use.x*8+8, use.y*8}, 8, 0, sty->foreground);
-
+        DrawRectangleLinesEx(
+            (Rectangle){use.x*TILE_SIZE,use.y*TILE_SIZE,use.w*TILE_SIZE,use.h*TILE_SIZE},
+            sty->border_width,sty->border);
+    DrawTextEx(current_font,label,(Vector2){use.x*TILE_SIZE+TILE_SIZE,use.y*TILE_SIZE},
+               TILE_SIZE,0,sty->foreground);
     return clicked;
 }
 
-/*
-bool tm_button(const char *label, gridrect r) {
-    // compute size
-    int txtw = MeasureTextEx(current_font, label, 8, 0).x / 8;
-    int w = (r.w > 0 ? r.w : txtw + 2);
-    int h = (r.h > 0 ? r.h : 1);
-    // get rect
-    gridrect use = (r.x<0 && r.y<0)
-        ? tm_next_cell(w,h)
-        : (gridrect){ r.x, r.y, w, h };
-    // draw
-    tm_rect(use);
-    tm_label(label, use.x+1, use.y, current_style.foreground);
-    // interaction (returns true on click)
-    Rectangle pr = {
-        use.x*8.f, use.y*8.f,
-        use.w*8.f, use.h*8.f
-    };
-    Vector2 m = GetMousePosition();
-    if (CheckCollisionPointRec(m, pr) && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
-        return true;
-    }
-    return false;
-}
-*/
-
 void tm_drawtile(int x, int y, atlaspos tile) {
-    Rectangle src = {
-        tile.x*8.f, tile.y*8.f,
-        8, 8
-    };
-    Rectangle dst = {
-        x*8.f, y*8.f,
-        8, 8
-    };
-    DrawTexturePro(tile_atlas, src, dst, (Vector2){0,0}, 0.f, WHITE);
+    DrawTexturePro(tile_atlas,
+                   (Rectangle){tile.x*TILE_SIZE,tile.y*TILE_SIZE,TILE_SIZE,TILE_SIZE},
+                   (Rectangle){x*TILE_SIZE,y*TILE_SIZE,TILE_SIZE,TILE_SIZE},
+                   (Vector2){0,0},0,WHITE);
 }
 
 
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////         TEST MAIN  ///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+// ——— Test Main ———
 int main(void) {
-    // 1) Setup Raylib window & offscreen buffer
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(FRAME_WIDTH*2, FRAME_HEIGHT*2, "TMGUI Test");
-    RenderTexture2D target = LoadRenderTexture(FRAME_WIDTH, FRAME_HEIGHT);
+    InitWindow(FRAME_WIDTH*2,FRAME_HEIGHT*2,"TMGUI Layout Test");
     SetTargetFPS(60);
 
     tmgui_init();
+    tm_canvas canvas = tm_canvas_init(80,45,false);
 
-    // 2) Main loop
     while (!WindowShouldClose()) {
-        // ——— Draw into our 80×45 tile canvas ———
-        BeginTextureMode(target);
-        ClearBackground(BLACK);
-
-        // Your test UI here:
-        // e.g. a little box and two buttons in a vbox
-        tm_set_style(&STYLE_TMGUI);
+        tm_canvas_begin(&canvas);
+            tm_set_style(&STYLE_TMGUI);
 
 
-        tm_vbox(R(0, 0, 0, 0));     // AUTO‑flow vbox at (4,4)
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-        tm_end_box();
+              // left
+              tm_vbox(R(0,-1,24,0));
 
+                tm_button("Left One", AUTO);
+                tm_button("Left Two", AUTO);
+                tm_button("Left Three", AUTO);
+              tm_end_box();
 
-        tm_vbox(R(7, 0, 0, 0));     // AUTO‑flow vbox at (4,4)
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-          tm_button("Hello", AUTO);
-          tm_button("World", AUTO);
-        tm_end_box();
+              // center
+              tm_vbox(R(10,-1,24,0));
 
-        tm_drawtile(1, 3, TILE_B);
+                tm_button("Center A", AUTO);
+                tm_button("Center B", AUTO);
+                tm_button("Center C", AUTO);
+              tm_end_box();
 
-        EndTextureMode();  // ← you must EndTextureMode!
+              // right
+              tm_vbox(R(20,-1,24,0));
+
+                tm_button("Right I", AUTO);
+                tm_button("Right II", AUTO);
+                tm_button("Right III", AUTO);
+              tm_end_box();
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////    DRAW V FRAME    ///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // ——— Now stretch that 80×45 canvas up to the actual window ———
+        tm_canvas_end(&canvas);
+
         BeginDrawing();
-        ClearBackground(DARKGRAY);
-
-        int screenW = GetScreenWidth();
-        int screenH = GetScreenHeight();
-        int scaleX = screenW / FRAME_WIDTH;
-        int scaleY = screenH / FRAME_HEIGHT;
-        int scale  = (scaleX < scaleY ? scaleX : scaleY);
-        if (scale < 1) scale = 1;
-
-        int drawW = FRAME_WIDTH * scale;
-        int drawH = FRAME_HEIGHT * scale;
-        int offsetX = (screenW - drawW) / 2;
-        int offsetY = (screenH - drawH) / 2;
-
-        tm_update_transform(scale, offsetX, offsetY); // ✅ update transform BEFORE UI starts
-
-        DrawTexturePro(
-            target.texture,
-            (Rectangle){ 0, 0, FRAME_WIDTH, -FRAME_HEIGHT },
-            (Rectangle){ offsetX, offsetY, drawW, drawH },
-            (Vector2){ 0, 0 },
-            0.0f, WHITE
-        );
-
-        EndDrawing();  // ← and don’t forget EndDrawing()
+            ClearBackground(DARKGRAY);
+            // stretch canvas->screen
+            DrawTexturePro(
+                canvas.target.texture,
+                (Rectangle){0,0,FRAME_WIDTH,-FRAME_HEIGHT},
+                (Rectangle){canvas.offset_x,canvas.offset_y,
+                            FRAME_WIDTH*canvas.scale,
+                            FRAME_HEIGHT*canvas.scale},
+                (Vector2){0,0},0,WHITE);
+        EndDrawing();
     }
 
-    // 3) Shutdown
     tmgui_shutdown();
     CloseWindow();
     return 0;
