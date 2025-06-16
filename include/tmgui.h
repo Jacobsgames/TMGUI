@@ -20,6 +20,8 @@ typedef struct {
 // Helpers to construct gridrects
 #define AUTO ((gridrect){ -1, -1, 0, 0 })
 #define R(x,y,w,h) ((gridrect){ x, y, w, h })
+#define AUTO        ((gridrect){ -1, -1, 0, 0 })  // default (left)
+#define RIGHT  ((gridrect){ -2, -1, 0, 0 })  // right-aligned in VBOX
 
 // ——— Tile Atlas ———
 typedef struct { int x, y; } atlaspos;

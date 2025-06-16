@@ -50,38 +50,40 @@ gridrect tm_next_cell(int w, int h) {
 }
 
 void tm_vbox(gridrect r) {
+    // Pop previous box (flat model, only one active at a time)
+    if (layout_stack_top >= 0) layout_stack_top--;
+
+    // Then push the new one
     int ax = (r.x<0 ? tm_next_cell(0,0).x : r.x);
     int ay = (r.y<0 ? tm_next_cell(0,0).y : r.y);
     if (layout_stack_top < MAX_LAYOUT_STACK-1) {
         layout_stack[++layout_stack_top] = (LayoutContext){
-            .mode      = LAYOUT_VBOX,
-            .origin    = { ax, ay, 0,0 },
-            .cursor_x  = 0,
-            .cursor_y  = 0,
-            .align     = TM_ALIGN_LEFT,
-            .requested = r
+            .mode     = LAYOUT_VBOX,
+            .origin   = { ax, ay, 0, 0 },
+            .cursor_x = 0,
+            .cursor_y = 0
         };
     }
 }
 
 void tm_hbox(gridrect r) {
+    // Pop previous box (flat model, only one active at a time)
+    if (layout_stack_top >= 0) layout_stack_top--;
+
+    // Then push the new one
     int ax = (r.x<0 ? tm_next_cell(0,0).x : r.x);
     int ay = (r.y<0 ? tm_next_cell(0,0).y : r.y);
     if (layout_stack_top < MAX_LAYOUT_STACK-1) {
         layout_stack[++layout_stack_top] = (LayoutContext){
-            .mode      = LAYOUT_HBOX,
-            .origin    = { ax, ay, 0,0 },
-            .cursor_x  = 0,
-            .cursor_y  = 0,
-            .align     = TM_ALIGN_LEFT,
-            .requested = r
+            .mode     = LAYOUT_HBOX,
+            .origin   = { ax, ay, 0, 0 },
+            .cursor_x = 0,
+            .cursor_y = 0
         };
     }
 }
 
-void tm_end_box(void) {
-    if (layout_stack_top >= 0) layout_stack_top--;
-}
+
 
 void tmgui_init(void) {
     if (inited) return;
@@ -153,42 +155,63 @@ void tm_label(const char *text, int x, int y, Color c) {
 
 bool tm_button(const char *label, gridrect r) {
     // 1) measure
-    int txtw = MeasureTextEx(current_font,label,TILE_SIZE,0).x/TILE_SIZE;
-    int w = (r.w>0? r.w: txtw+2), h = (r.h>0? r.h:1);
-    // 2) position
+    int txtw = MeasureTextEx(current_font, label, TILE_SIZE, 0).x / TILE_SIZE;
+    int w = (r.w > 0 ? r.w : txtw + 2);
+    int h = (r.h > 0 ? r.h : 1);
+
     LayoutContext *ctx = current_ctx();
-    gridrect use = (r.x<0&&r.y<0)? tm_next_cell(w,h) : (gridrect){r.x,r.y,w,h};
-    // 3) alignment (VBOX only)
-    if (ctx && ctx->mode==LAYOUT_VBOX) {
-        int cw = (ctx->requested.w>0? ctx->requested.w: ctx->cursor_x);
-        switch(ctx->align) {
-            case TM_ALIGN_CENTER:
-                use.x = ctx->origin.x + (cw - use.w)/2; break;
-            case TM_ALIGN_RIGHT:
-                use.x = ctx->origin.x + (cw - use.w);    break;
-            case TM_ALIGN_FILL:
-                use.x = ctx->origin.x; use.w = cw;        break;
-            default: break;
+    gridrect use;
+
+    bool is_auto_left  = (r.x == -1 && r.y < 0);
+    bool is_auto_right = (r.x == -2 && r.y < 0);
+
+    if ((is_auto_left || is_auto_right) && ctx && ctx->mode == LAYOUT_VBOX) {
+        // 2a) Get next Y without advancing
+        int y = ctx->origin.y + ctx->cursor_y;
+        int x = ctx->origin.x;
+
+        int cw = (ctx->requested.w > 0 ? ctx->requested.w : 0);
+
+        if (is_auto_right && cw > 0) {
+            x = ctx->origin.x + (cw - w);
         }
+
+        use = (gridrect){ x, y, w, h };
+
+        // 2b) Manually advance cursor after placing
+        ctx->cursor_y += h;
+    } else if (r.x < 0 && r.y < 0) {
+        // fallback auto-mode
+        use = tm_next_cell(w, h);
+    } else {
+        use = (gridrect){ r.x, r.y, w, h };
     }
-    // 4) input
+
+    // 3) input
     Vector2 mg = tm_mouse_grid();
-    Rectangle pr = {use.x, use.y, use.w, use.h};
-    bool over = CheckCollisionPointRec(mg,pr);
+    Rectangle pr = { use.x, use.y, use.w, use.h };
+    bool over = CheckCollisionPointRec(mg, pr);
     bool pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
     bool clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
-    // 5) style
+
+    // 4) style
     const tm_style *sty = &STYLE_BTN_NORMAL;
     if (pressed) sty = &STYLE_BTN_ACTIVE;
     else if (over) sty = &STYLE_BTN_HOVER;
-    // 6) draw
-    DrawRectangle(use.x*TILE_SIZE,use.y*TILE_SIZE,use.w*TILE_SIZE,use.h*TILE_SIZE,sty->background);
-    if (sty->border_width>0)
+
+    // 5) draw
+    DrawRectangle(use.x * TILE_SIZE, use.y * TILE_SIZE, use.w * TILE_SIZE, use.h * TILE_SIZE, sty->background);
+    if (sty->border_width > 0) {
         DrawRectangleLinesEx(
-            (Rectangle){use.x*TILE_SIZE,use.y*TILE_SIZE,use.w*TILE_SIZE,use.h*TILE_SIZE},
-            sty->border_width,sty->border);
-    DrawTextEx(current_font,label,(Vector2){use.x*TILE_SIZE+TILE_SIZE,use.y*TILE_SIZE},
-               TILE_SIZE,0,sty->foreground);
+            (Rectangle){ use.x * TILE_SIZE, use.y * TILE_SIZE, use.w * TILE_SIZE, use.h * TILE_SIZE },
+            sty->border_width, sty->border
+        );
+    }
+
+    DrawTextEx(current_font, label,
+               (Vector2){ use.x * TILE_SIZE + TILE_SIZE, use.y * TILE_SIZE },
+               TILE_SIZE, 0, sty->foreground);
+
     return clicked;
 }
 
@@ -211,8 +234,9 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         tm_canvas_begin(&canvas);
-            tm_set_style(&STYLE_TMGUI);
 
+
+            tm_set_style(&STYLE_TMGUI);
 
               // left
               tm_vbox(R(0,-1,24,0));
@@ -220,7 +244,7 @@ int main(void) {
                 tm_button("Left One", AUTO);
                 tm_button("Left Two", AUTO);
                 tm_button("Left Three", AUTO);
-              tm_end_box();
+
 
               // center
               tm_vbox(R(10,-1,24,0));
@@ -228,15 +252,23 @@ int main(void) {
                 tm_button("Center A", AUTO);
                 tm_button("Center B", AUTO);
                 tm_button("Center C", AUTO);
-              tm_end_box();
+
 
               // right
               tm_vbox(R(20,-1,24,0));
+                tm_button("CentA", AUTO);
+                tm_button("Cen", AUTO);
+                tm_button("Cente", RIGHT);
 
-                tm_button("Right I", AUTO);
-                tm_button("Right II", AUTO);
-                tm_button("Right III", AUTO);
-              tm_end_box();
+
+
+
+              tm_hbox(R(30, 10, 50, 0));
+tm_button("One", AUTO);
+tm_button("Two", AUTO);
+tm_button("Three", AUTO);
+
+
 
 
 
