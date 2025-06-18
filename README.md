@@ -60,7 +60,7 @@ tm_canvas_end(&canvas);
 
 **Zero Dependencies Beyond Raylib**
 
-- Pure **C99**
+- Pure, low level **C** code
 - **Raylib** handles rendering, input, and font loading
 
 🛠️**Planned Features**
