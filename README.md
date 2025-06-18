@@ -67,7 +67,7 @@ Zero Dependencies Beyond Raylib**
 - Pure, low level **C99** codebase
 - **Raylib** handles rendering, input, and font loading
 
-🛠️**Planned Features**
+🛠️**Planned Features**🛠️
 
 -  Scroll marquee for clipped label text  
 -  Input widgets (text field, slider, checkbox, spinbox, int/float input, dropdowns)
