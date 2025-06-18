@@ -86,11 +86,9 @@ tm_canvas_end(&canvas);
 
 ---
 
-📄 **License**
+📄 **License - MIT**
 
-**MIT**
-
-## Author
+****
 
 **Jacob Holland**  
 Made with love.
