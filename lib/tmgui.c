@@ -262,7 +262,8 @@ void tm_hbox(gridrect r) {
 }
 
 
-Font mycustomfont;
+Font customfont0;
+Font customfont1;
 
 // --- Main ---
 int main(void) {
@@ -274,8 +275,10 @@ int main(void) {
     tmgui_init(cw, ch);
     SetTargetFPS(60);
 
-    mycustomfont = LoadFontEx("C:/Code/tmgui/fonts/CHUNKY.ttf", cell_h, NULL, 0);
-    SetTextureFilter(mycustomfont.texture, TEXTURE_FILTER_POINT);
+    customfont0 = LoadFontEx("C:/Code/tmgui/fonts/URSA.ttf", cell_h, NULL, 0);
+    customfont1 = LoadFontEx("C:/Code/tmgui/fonts/DUNGEONMODE.ttf", cell_h, NULL, 0);
+    SetTextureFilter(customfont0.texture, TEXTURE_FILTER_POINT);
+    SetTextureFilter(customfont1.texture, TEXTURE_FILTER_POINT);
 
     ui_canvas canvas = ui_canvas_init(gw, gh, false);
 
@@ -304,10 +307,13 @@ int main(void) {
             DRAWTILE(78,1,TILE(10,10));
             TEXT("WELCOME TO IMGUI!", 30, 0, WHITE);
             TEXT("THIS TEXT IS MANUALY PLACED HERE", 0, 21, WHITE);
-            tm_set_font(&mycustomfont);
+            tm_set_font(&customfont1);
 
-            TEXT("WE SUPPORT DIFFRENT FONTS", 30, 1, WHITE);
-            tm_set_font(NULL);
+            TEXT("WE SUPPORT ALTERNATE FONTS", 30, 1, WHITE);
+            tm_set_font(&customfont0);
+
+            TEXT("YOU CAN EVEN MIX THEM IF THE CELL SIZE matches", 30, 2, WHITE);
+            
             tm_vbox(RECT(0, 2, 20, 0));
 
 
@@ -335,6 +341,7 @@ int main(void) {
                 tm_set_style(&STYLE_TMGUI);
                 ALIGN(CENTER,CENTER);
                 ALIGNH(LEFT);
+
                 tm_label("Style + Align Modes",SIZE(20, 1));
 
                 
@@ -349,7 +356,8 @@ int main(void) {
                 tm_button("CENTER2", SIZE(20, 1));
                 tm_button("CENTER TALL", SIZE(20, 3));
 
-                tm_button("BIG MANUAL POS/SIZE", RECT(21, 2,22,9));
+                tm_button("BIG MANUAL POS/SIZE", RECT(21, 3,22,9));
+                tm_set_font(NULL);
                 tm_hbox(RECT(0, 42, 80, 3));
             tm_button("HBOX",SIZE(10,3));
             tm_button("OF",SIZE(10,3));
