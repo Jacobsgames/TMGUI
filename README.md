@@ -12,25 +12,32 @@
 
 **Flat Layout System**  
 - Supports `tm_vbox(...)` and `tm_hbox(...)` with deterministic cursor-based layout  
-- No nesting — one container at a time  
+- No nested containers — one container at a time  
 
 **Basic Primitives**  
 - `tm_label(...)`, `tm_button(...)`, `tm_rect(...)`, `tm_text(...)`, `tm_drawtile(...)`  
 
-**Alignment Support**  
-- Horizontal: `ALIGN_LEFT`, `ALIGN_CENTER`, `ALIGN_RIGHT`  
-- Vertical: `ALIGN_TOP`, `ALIGN_CENTER`, `ALIGN_BOTTOM`  
-- Controlled via `tm_align(ALIGN(H, V))` macro  
+**Text Alignment and Element Spacing Support**
+- Align text in Labels and Buttons!  
+- Controlled via `ALIGN(RIGHT,CENTER) ALIGNH(RIGHT) ALIGNV(TOP)` macros  
+- Space out elements in a vbox/hbox!
+- Controlled via `tm_add_spacing(1)` to overide the current spacing  
 
-**Style System**  
-- `tm_style` struct includes base styling + button states (`normal`, `hover`, `active`)  
-- Per-widget style support using global `current_style`  
-- Easily define reusable themes  
-
-**AUTO Layout Support (Minimalist)**  
+**AUTO Layout Container Support **  
 - Use `AUTO` in any gridrect to auto-size/position elements  
 - Width expands in `tm_vbox`, height expands in `tm_hbox`  
 - Supports macros like `SIZE(w,h)`, `WIDTH(w)`, `HEIGHT(h)`, `AUTO`  
+
+**Grid-Based Pixel-Perfect Canvas Autoscaling**
+- Define your programs grid dimentions (80x45 = 16:9)
+- The autoscalingkeeps your grid canvas at the maximum size, adding letter/pillarboxing when needed
+- Canvas will only scale to pixel perfect multiples
+
+**Style System**  
+- `tm_style` struct encapsulates styling (foreground, background, border color and width), font and button states (`normal`, `hover`, `active`)  
+- Per-element style support using `tm_set_style()` to set the global `current_style` 
+- Per-element font overide using `tm_set_font()`
+- Easily define reusable themes  
 
 **Simple GUI layout syntax**  
 - Clean syntax for GUI layout:  
