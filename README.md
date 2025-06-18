@@ -6,7 +6,7 @@
 ![TMGUI demo](EXAMPLE.gif)
 
 ## Features
-**Grid-Based Layout and Container Support **  
+**Grid-Based Layout and Container Support**  
 - Fixed cell dimensions (`cell_w`, `cell_h`) defined with `tm_init(w,h)` 
 - Grid-rect based positioning with optional placement macros for use inside v/hboxes 
 - Supports `AUTO` (full auto), `POS(x,y)` (manual pos, auto size) and `SIZE(w,h)` (auto pos, manual size)
