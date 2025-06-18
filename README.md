@@ -1,6 +1,6 @@
 # TMGUI (ALPHA)
 
-**TMGUI** is a minimalistic 'TextMode' IMGUI (Immediate Mode GUI) API being developed in C. Designed for pixel-perfect grid-based interfaces, tile-based games/toys/tools, and text-mode aesthetics. Inspired by old-school OS interfaces and modern TextMode aesthetics, TMGUI emphasizes predictability, simplicity and total layout control with a DSL like layout code syntax.
+**TMGUI** is a minimalistic 'TextMode' IMGUI (Immediate Mode GUI) API being developed in C with Raylib at its core (https://www.raylib.com/). Designed for pixel-perfect grid-based interfaces, tile-based games/toys/tools, and text-mode aesthetics. Inspired by old-school OS interfaces and modern TextMode aesthetics, TMGUI emphasizes predictability, simplicity and total layout control with a DSL like layout code syntax.
 
 ## Features
 **Tile/Grid-Based Layout**  
