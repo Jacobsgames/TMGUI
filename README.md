@@ -60,7 +60,7 @@ tm_canvas_begin(&canvas);
 
 		tm_set_font(&YOURFONT);
 		tm_set_style(&STYLE_YOURS);
-		ALIGN(CENTER, TOP);
+		ALIGN(CENTER,CENTER);
 		tm_label("CENTERED TITLE", SIZE(30, 3));
 
 tm_canvas_end(&canvas);
