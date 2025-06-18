@@ -31,7 +31,7 @@
 - Controlled via `tm_add_spacing(1)` to overide the current spacing  
 
 **Style System**  
-- `tm_style` struct controls:
+- `tm_style` struct controls an elements:
   - Foreground / background color
   - Border color / width
   - Font
