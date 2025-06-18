@@ -9,8 +9,10 @@
 ## Features
 **Grid-Based Layout and Container Support**  
 - Fixed cell dimensions (`cell_w`, `cell_h`) defined with `tm_init(w,h)` 
-- Grid-rect based positioning with optional placement macros for use inside v/hboxes 
-- Supports `AUTO` (full auto), `POS(x,y)` (manual pos, auto size) and `SIZE(w,h)` (auto pos, manual size)
+- Supports `tm_vbox(...)` and `tm_hbox(...)` with deterministic cursor-based layout 
+- Grid-rect based size and positioning with optional transform macros for use inside v/hboxes  
+- Simple, flat layout system, no nested containers — one container at a time! 
+- Supports `AUTO` (full auto), `POS(x,y)` (manual pos, auto size), `SIZE(w,h)` (auto pos, manual size) and `RECT(x,y,w,h)` for full manual control
 - In `AUTO` or `POS(x,y)` mode, an elements width expands in `tm_vbox`, and height expands in `tm_hbox`  
 
 **Grid-Based Pixel-Perfect Canvas Autoscaling**
@@ -18,8 +20,6 @@
 - Define the canvas grid dimensions with `tm_canvas_init(w,h,trans)` (80x45 = 16:9)
 - The auto scaling sizes your canvas to fit the current window size, adding letter/pillarboxing where needed
 - Canvas will only scale to pixel perfect multiples, no weird artefacts! 
-- Supports `tm_vbox(...)` and `tm_hbox(...)` with deterministic cursor-based layout  
-- Simple, flat layout system, no nested containers — one container at a time! 
 
 **Basic Primitives**  
 - `tm_label(...)`, `tm_button(...)`, `tm_rect(...)`, `tm_text(...)`, `tm_drawtile(...)`  
