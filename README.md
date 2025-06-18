@@ -37,7 +37,7 @@
   - Font
   - Button states: normal, hover, active
 - Per-element style with `tm_set_style(...)`
-- Per-element font override with `tm_set_font(...)`
+- Per-element font override with `tm_set_font(...)` (will overide the styles font)
 - Easy to define multiple reusable styles (e.g., `STYLE_TMGUI`, `STYLE_GREY`)
 
 **Clean DSL-like layout syntax**  
