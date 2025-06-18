@@ -52,14 +52,14 @@ tm_canvas_begin(&canvas);
 	tm_label("MANUALY POSITIONED",POS(20, 4));
 
 	tm_vbox(RECT(2, 2, 20, 0));
-	
+
 		tm_label("AUTO POS TITLE",SIZE(20, 3));
 		tm_button("Play Game",AUTO);
 		tm_button("Options",AUTO);
 		tm_button("Exit",AUTO);
 
 		tm_set_font(&YOURFONT);
-		tm_set_style(&STYLE_TMGUI);
+		tm_set_style(&STYLE_YOURS);
 		ALIGN(CENTER, TOP);
 		tm_label("CENTERED TITLE", SIZE(30, 3));
 
