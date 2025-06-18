@@ -3,6 +3,8 @@
 **TMGUI** is a minimalistic 'TextMode' IMGUI (Immediate Mode GUI) API being developed in C with Raylib at its core (https://www.raylib.com/). Designed for pixel-perfect grid-based interfaces, tile-based games/toys/tools, and text-mode aesthetics. Inspired by old-school OS interfaces and the modern TextMode art movement.<br> 
 **TMGUI** emphasizes predictability, simplicity and total layout control with a DSL like syntax for layout code.
 
+![TMGUI in action!](tmgui/EXAMPLE.gif)
+
 ## Features
 **Tile/Grid-Based Layout**  
 - Fixed cell dimensions (`cell_w`, `cell_h`)  
