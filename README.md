@@ -29,10 +29,6 @@
 - Per-widget style support using global `current_style`  
 - Easily define reusable themes  
 
-✅ **Canvas Abstraction**  
-- `tm_canvas` system handles render targets, scaling, and screen centering  
-- Optional transparency and scale-aware mouse input  
-
 ✅ **AUTO Layout Support (Minimalist)**  
 - Use `AUTO` in any gridrect to auto-size/position elements  
 - Width expands in `tm_vbox`, height expands in `tm_hbox`  
@@ -56,19 +52,14 @@ tm_canvas_begin(&canvas);
 
 tm_canvas_end(&canvas);
 ```
-
 ✅ **No Dynamic Allocation**
 
 No `malloc`s — all layout state is static and explicit.
-
-
 
 ✅ **Zero Dependencies Beyond Raylib**
 
 - Pure **C99**
 - **Raylib** handles rendering, input, and font loading
-
-
 
 🛠️ **Planned Features**
 
