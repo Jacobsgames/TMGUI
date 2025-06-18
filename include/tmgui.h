@@ -4,9 +4,11 @@
 #include "raylib.h"
 
 // --- Grid Rect ---
+typedef struct { int x, y, w, h; } gridrect;
+
 typedef struct {
-    int x, y, w, h;
-} gridrect;
+    int x, y;
+} gridpos;
 
 // --- Offscreen Canvas ---
 typedef struct {
@@ -20,7 +22,13 @@ typedef struct {
 // --- Layout Mode ---
 typedef enum { LAYOUT_NONE, LAYOUT_HBOX, LAYOUT_VBOX } LayoutMode;
 
-typedef enum { ALIGNMENT_LEFT, ALIGNMENT_CENTER, ALIGNMENT_RIGHT } tm_align_mode;
+typedef enum {
+    ALIGN_LEFT,
+    ALIGN_CENTER,
+    ALIGN_RIGHT,
+    ALIGN_TOP,
+    ALIGN_BOTTOM
+} align_mode;
 
 typedef struct {
     LayoutMode mode;
@@ -31,14 +39,22 @@ typedef struct {
 extern layout_context gui_context;
 
 // --- Helpers ---
+
+
 #define AUTO ((gridrect){ -1, -1, 0, 0 })
 #define SIZE(w,h) ((gridrect){ -1, -1, (w), (h) })
 #define POS(x,y) ((gridrect){ x, y, 0, 0 })  
-#define RECT(x,y,w,h) ((gridrect){ x, y, w, h })
 
-#define ALIGN_LEFT   tm_align(ALIGNMENT_LEFT)
-#define ALIGN_CENTER tm_align(ALIGNMENT_CENTER)
-#define ALIGN_RIGHT  tm_align(ALIGNMENT_RIGHT)
+#define RECT(x,y,w,h) ((gridrect){ x, y, w, h })
+#define GPOS(x, y) ((gridpos){ (x), (y) })
+
+#define TEXT(s, x, y, c) tm_text((s), GPOS((x), (y)), (c))
+#define DRAWTILE(x, y, tile) tm_drawtile((gridpos){ x, y }, tile)
+
+
+#define ALIGN(h, v)       do { tm_align_horizontal(ALIGN_##h); tm_align_vertical(ALIGN_##v); } while (0)
+#define ALIGNH(h)         tm_align_horizontal(ALIGN_##h)
+#define ALIGNV(v)         tm_align_vertical(ALIGN_##v)
 
 // --- Tile Atlas ---
 typedef struct { int x, y; } atlaspos;
@@ -93,6 +109,36 @@ static const tm_style STYLE_TMGUI = {
     .font = { 0 } // Use fallback if not specified
 };
 
+static const tm_style STYLE_GREY = {
+    .base = (tm_rect_style){
+        .background = DARKGRAY,
+        .foreground = LIGHTGRAY,
+        .border = GRAY,
+        .border_width = 0
+    },
+    .button = {
+        .normal = (tm_rect_style){
+            .background = GRAY,
+            .foreground = LIGHTGRAY,
+            .border = DARKGRAY,
+            .border_width = 0
+        },
+        .hover = (tm_rect_style){
+            .background = DARKGRAY,
+            .foreground = WHITE,
+            .border = LIGHTGRAY,
+            .border_width = 1
+        },
+        .active = (tm_rect_style){
+            .background = LIGHTGRAY,
+            .foreground = BLACK,
+            .border = GRAY,
+            .border_width = 1
+        }
+    },
+    .font = { 0 } // Use fallback font
+};
+
 #define STYLE_BASIC   (tm_rect_style){ DARKGRAY, LIGHTGRAY, GRAY, 1 }
 #define STYLE_BW       (tm_rect_style){ BLACK,    WHITE,     WHITE, 1 }
 #define STYLE_CONSOLE  (tm_rect_style){ GREEN,    BLACK,     BLACK, 1 }
@@ -110,14 +156,15 @@ void tmgui_init(int cell_w, int cell_h);
 void tmgui_shutdown(void);
 void tm_set_style(const tm_style *style);
 void tm_set_font(Font *font);
-void tm_align(tm_align_mode mode);
+void tm_align_horizontal(align_mode mode);
+void tm_align_vertical(align_mode mode);
 void tm_set_spacing(int spacing);
 
 // --- Primitives ---
 void tm_rect(gridrect r);
-void tm_text(const char *text, int x, int y, Color c);
+void tm_text(const char *text, gridpos pos, Color color);
 void tm_label(const char *label, gridrect r);
-void tm_drawtile(int x, int y, atlaspos tile);
+void tm_drawtile(gridpos pos, atlaspos tile);
 bool tm_button(const char *label, gridrect recti);
 
 // --- Mouse Input / Transform ---

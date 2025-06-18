@@ -13,7 +13,8 @@ static int canvas_scale, canvas_x, canvas_y;
 
 layout_context gui_context = {0};
 
-static tm_align_mode g_tm_align = ALIGNMENT_LEFT;
+static align_mode h_align = ALIGN_LEFT;
+static align_mode v_align = ALIGN_TOP;
 
 // --- Transform ---
 void tm_update_transform(int scale, int pos_x, int pos_y) {
@@ -24,9 +25,19 @@ void tm_update_transform(int scale, int pos_x, int pos_y) {
 
 Vector2 tm_mouse_grid(void) {
     Vector2 m = GetMousePosition();
-    float px = (m.x - canvas_x) / (float)canvas_scale;
+    float pixel_rect = (m.x - canvas_x) / (float)canvas_scale;
     float py = (m.y - canvas_y) / (float)canvas_scale;
-    return (Vector2){ px / cell_w, py / cell_h };
+    return (Vector2){ pixel_rect / cell_w, py / cell_h };
+}
+
+// Converts horizontal pixel distance to grid cells (X-axis)
+static inline int pixels_to_grid_x(float pixels) {
+    return (int)(pixels / (float)cell_w);
+}
+
+// Converts vertical pixel distance to grid cells (Y-axis)
+static inline int pixels_to_grid_y(float pixels) {
+    return (int)(pixels / (float)cell_h);
 }
 
 // --- Init ---
@@ -66,8 +77,12 @@ void tm_set_spacing(int spacing) {
     layout_spacing = spacing;
 }
 
-void tm_align(tm_align_mode mode) {
-    g_tm_align = mode;
+void tm_align_horizontal(align_mode mode) {
+    h_align = mode;
+}
+
+void tm_align_vertical(align_mode mode) {
+    v_align = mode;
 }
 
 
@@ -107,88 +122,118 @@ void ui_canvas_end(ui_canvas *c) {
         (Vector2){ 0, 0 }, 0, WHITE);
 }
 
-// --- Primitives ---
-void tm_rect(gridrect r) {
-    Rectangle px = { r.x * cell_w, r.y * cell_h, r.w * cell_w, r.h * cell_h };
-    DrawRectangle(px.x, px.y, px.width, px.height, current_style.base.background);
-    if (current_style.base.border_width > 0)
-        DrawRectangleLinesEx(px, current_style.base.border_width, current_style.base.border);
-}
-
 static Font get_active_font(void) {
     if (current_font.texture.id != 0) return current_font;
     if (current_style.font.texture.id != 0) return current_style.font;
     return fallback_font;
 }
 
-void tm_text(const char *text, int x, int y, Color c) {
+// --- Primitives ---
+void tm_rect(gridrect r) {
+    Rectangle pixel_rect = { r.x * cell_w, r.y * cell_h, r.w * cell_w, r.h * cell_h };
+    DrawRectangle(pixel_rect.x, pixel_rect.y, pixel_rect.width, pixel_rect.height, current_style.base.background);
+    if (current_style.base.border_width > 0)
+        DrawRectangleLinesEx(pixel_rect, current_style.base.border_width, current_style.base.border);
+}
+
+
+void tm_text(const char *text, gridpos pos, Color c) {
     Font use_font = get_active_font();
-    DrawTextEx(use_font, text, (Vector2){ x * cell_w, y * cell_h }, cell_h, 0, c);
+    DrawTextEx(use_font, text, (Vector2){ pos.x * cell_w, pos.y * cell_h }, cell_h, 0, c);
 }
 
 void tm_label(const char *label, gridrect r) {
     Font use_font = get_active_font();
-    Vector2 sz = MeasureTextEx(use_font, label, cell_h, 0);
-    int tw = sz.x / cell_w;
-    int w = (r.w > 0 ? r.w : tw + 2);
+    Vector2 txt_width_px = MeasureTextEx(use_font, label, cell_h, 0);
+    int txt_width = pixels_to_grid_x(txt_width_px.x);
+    int w = (r.w > 0 ? r.w : txt_width + 2);
     int h = (r.h > 0 ? r.h : 1);
 
     gridrect final = (r.x < 0 && r.y < 0) ? tm_next_cell(w, h) : (gridrect){ r.x, r.y, w, h };
 
-    Rectangle px = { final.x * cell_w, final.y * cell_h, final.w * cell_w, final.h * cell_h };
-    DrawRectangle(px.x, px.y, px.width, px.height, current_style.base.background);
+    Rectangle pixel_rect = {
+        final.x * cell_w,
+        final.y * cell_h,
+        final.w * cell_w,
+        final.h * cell_h
+    };
+
+    DrawRectangle(pixel_rect.x, pixel_rect.y, pixel_rect.width, pixel_rect.height, current_style.base.background);
     if (current_style.base.border_width > 0)
-        DrawRectangleLinesEx(px, current_style.base.border_width, current_style.base.border);
+        DrawRectangleLinesEx(pixel_rect, current_style.base.border_width, current_style.base.border);
 
-    // lignment logic here
-    int text_x = final.x + 1; // Default: left
-    if (g_tm_align == ALIGNMENT_CENTER)
-        text_x = final.x + (final.w - tw) / 2;
-    else if (g_tm_align == ALIGNMENT_RIGHT)
-        text_x = final.x + final.w - tw - 1;
+    // --- HORIZONTAL ALIGN ---
+    int text_x = final.x + 1;
+    if (h_align == ALIGN_CENTER)
+        text_x = final.x + (final.w - txt_width) / 2;
+    else if (h_align == ALIGN_RIGHT)
+        text_x = final.x + final.w - txt_width - 1;
 
-    tm_text(label, text_x, final.y, current_style.base.foreground);
+    // --- VERTICAL ALIGN ---
+    int text_y = final.y;
+    if (v_align == ALIGN_CENTER)
+        text_y = final.y + (final.h - 1) / 2;
+    else if (v_align == ALIGN_BOTTOM)
+        text_y = final.y + final.h - 1;
+
+    tm_text(label, (gridpos){ text_x, text_y }, current_style.base.foreground);
 }
 
-void tm_drawtile(int x, int y, atlaspos tile) {
+void tm_drawtile(gridpos pos, atlaspos tile) {
     DrawTexturePro(tile_atlas,
         (Rectangle){ tile.x * cell_w, tile.y * cell_h, cell_w, cell_h },
-        (Rectangle){ x * cell_w, y * cell_h, cell_w, cell_h },
+        (Rectangle){ pos.x * cell_w, pos.y * cell_h, cell_w, cell_h },
         (Vector2){ 0, 0 }, 0, WHITE);
 }
 
 bool tm_button(const char *label, gridrect recti) {
-    Font use_font = get_active_font();
-    Vector2 sz = MeasureTextEx(use_font, label, cell_h, 0);
-    int txtw = (int)ceilf(sz.x / (float)cell_w);  // critical: prevent truncation issues
-    int w = (recti.w > 0 ? recti.w : txtw + 2);
+    Font active_font = get_active_font();
+    Vector2 txt_width_px = MeasureTextEx(active_font, label, cell_h, 0);
+    int txt_width = pixels_to_grid_x(txt_width_px.x);
+
+    int w = (recti.w > 0 ? recti.w : txt_width + 2);
     int h = (recti.h > 0 ? recti.h : 1);
 
-    gridrect use = (recti.x < 0 && recti.y < 0) ? tm_next_cell(w, h) : (gridrect){ recti.x, recti.y, w, h };
-    Vector2 mg = tm_mouse_grid();
-    Rectangle grid_rect = { use.x, use.y, use.w, use.h };
+    gridrect final_rect = (recti.x < 0 && recti.y < 0) 
+        ? tm_next_cell(w, h) 
+        : (gridrect){ recti.x, recti.y, w, h };
 
-    bool over = CheckCollisionPointRec(mg, grid_rect);
+    Vector2 mouse_grid = tm_mouse_grid();
+    bool over = (mouse_grid.x >= final_rect.x && mouse_grid.x < final_rect.x + final_rect.w &&
+                 mouse_grid.y >= final_rect.y && mouse_grid.y < final_rect.y + final_rect.h);
+
     bool pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
     bool clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
 
-    tm_rect_style *style = &current_style.button.normal;
-    if (pressed)      style = &current_style.button.active;
-    else if (over)    style = &current_style.button.hover;
+    tm_rect_style *button_style = &current_style.button.normal;
+    if (pressed) button_style = &current_style.button.active;
+    else if (over) button_style = &current_style.button.hover;
 
-    Rectangle px = { use.x * cell_w, use.y * cell_h, use.w * cell_w, use.h * cell_h };
-    DrawRectangle(px.x, px.y, px.width, px.height, style->background);
-    if (style->border_width > 0)
-        DrawRectangleLinesEx(px, style->border_width, style->border);
+    Rectangle pixel_rect = {
+        final_rect.x * cell_w,
+        final_rect.y * cell_h,
+        final_rect.w * cell_w,
+        final_rect.h * cell_h
+    };
 
-    // --- Alignment ---
-    int text_x = use.x + 1;
-    if (g_tm_align == ALIGNMENT_CENTER)
-        text_x = use.x + (use.w - txtw) / 2;
-    else if (g_tm_align == ALIGNMENT_RIGHT)
-        text_x = use.x + use.w - txtw - 1;
+    DrawRectangle(pixel_rect.x, pixel_rect.y, pixel_rect.width, pixel_rect.height, button_style->background);
+    if (button_style->border_width > 0)
+        DrawRectangleLinesEx(pixel_rect, button_style->border_width, button_style->border);
 
-    tm_text(label, text_x, use.y, style->foreground);
+    // --- ALIGNMENT LOGIC ---
+    int text_x = final_rect.x + 1;
+    if (h_align == ALIGN_CENTER)
+        text_x = final_rect.x + (final_rect.w - txt_width) / 2;
+    else if (h_align == ALIGN_RIGHT)
+        text_x = final_rect.x + final_rect.w - txt_width - 1;
+
+    int text_y = final_rect.y;
+    if (v_align == ALIGN_CENTER)
+        text_y = final_rect.y + (final_rect.h - 1) / 2;
+    else if (v_align == ALIGN_BOTTOM)
+        text_y = final_rect.y + final_rect.h - 1;
+
+    tm_text(label, (gridpos){ text_x, text_y }, button_style->foreground);
 
     return clicked;
 }
@@ -234,22 +279,6 @@ int main(void) {
 
     ui_canvas canvas = ui_canvas_init(gw, gh, false);
 
-    /*
-    tm_style theme = {
-        .base = STYLE_CONSOLE,
-        .button = {
-            .normal = STYLE_BTN_NORMAL,
-            .hover  = STYLE_BTN_HOVER,
-            .active = STYLE_BTN_ACTIVE,
-        },
-        .font = current_font
-    };
-    */
-
-   
-
-    tm_set_style(&STYLE_TMGUI);
-
     while (!WindowShouldClose()) {
 
          
@@ -257,45 +286,48 @@ int main(void) {
 
 
         ui_canvas_begin(&canvas);
-
-        tm_vbox(RECT(2, 2, 20, 0));
-        if (tm_button("THIS PRINTS TO CONSOLE", AUTO)) {
-            TraceLog(LOG_INFO, "Play button clicked!");
-        }
-        tm_set_spacing(1);
-        tm_button("spaced", AUTO);
-        tm_button("out", AUTO);
-        tm_button("BUTTONS!", AUTO);
-        ALIGN_CENTER;
-        tm_button("CENTER + SIZED",SIZE(16, 5));
-        tm_set_spacing(0);
-        tm_label("Centered label",SIZE(30, 1));
-        ALIGN_RIGHT;
-        tm_label("Right aligned",SIZE(30, 1));
-        ALIGN_LEFT;
-        tm_label("LEFT aligned",SIZE(30, 1));
-        ALIGN_CENTER;
-        tm_button("Centered ", SIZE(30, 1));
-        ALIGN_RIGHT;
-        tm_button("Right aligned",SIZE(30, 1));
-        ALIGN_LEFT;
-        tm_button("LEFT aligned",SIZE(30, 1));
         
-        tm_set_font(&mycustomfont);
-        ALIGN_RIGHT;
-        tm_label("Right custom font",SIZE(30, 1));
-        tm_label("defined by user",SIZE(30, 1));
-        tm_label("Right aligned",SIZE(30, 1));
-        tm_label("now after this, load fallback font",SIZE(30, 1));
-        
+            tm_set_style(&STYLE_TMGUI);
 
-        tm_set_font(NULL);
-        tm_text("This is drawn using the theme's font! set_font(NULL)", 1, 42, WHITE);
+            tm_set_spacing(0);
+            DRAWTILE(1,1,TILE(10,10));
+            tm_vbox(RECT(2, 2, 20, 0));
+
+                ALIGN(CENTER,CENTER);
+                tm_label("Centered label",SIZE(20, 3));
+
+                ALIGNH(LEFT);
+                tm_button("OPTION",SIZE(20, 1));
+                tm_button("option",SIZE(20, 1));
+                tm_button("settings ", SIZE(20, 1));
+                tm_button("dogs",SIZE(20, 1));
+
+
+                ALIGN(CENTER,CENTER);
+                if (tm_button("PRINTS TO CONSOLE",SIZE(20, 5))) {
+                    TraceLog(LOG_INFO, "Play button clicked!");
+                }
+                TEXT("This is drawn using the theme's font! set_font(NULL)", 1, 42, WHITE);
+
+                tm_set_style(&STYLE_GREY);
+
+                       ALIGNH(CENTER);
+                tm_label("Centered label",SIZE(20, 1));
+
+                ALIGN(CENTER,CENTER);
+                tm_button("OPTION",SIZE(20, 3));
+                tm_button("option",SIZE(20, 3));
+                tm_button("settings ", SIZE(20, 3));
+                tm_button("dogs",SIZE(20, 3));
+                tm_set_spacing(4);
+                tm_button("(start 4 space)",SIZE(20, 3));
+
+
 
         ui_canvas_end(&canvas);
 
         BeginDrawing();
-        ClearBackground(DARKGRAY);
+        ClearBackground(BLACK);
         EndDrawing();
     }
 
