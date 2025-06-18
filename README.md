@@ -81,5 +81,4 @@ tm_canvas_end(&canvas);
 **Jacob Holland**  
 Made with love.
 
-README written by GPT as placeholder. 
 
