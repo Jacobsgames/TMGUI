@@ -59,7 +59,13 @@ No `malloc`s — all layout state is static and explicit.
 🛠️**Planned Features**
 
 -  Scroll marquee for clipped label text  
--  Input widgets (text fields, sliders, checkboxes)  
+-  Input widgets (text field, slider, checkbox, spinbox, int/float input, dropdowns)
+-  Scrollable areas (vertical and horizontal, with regular and log style scroll modes)
+-  Tile based panels/buttons/labels
+-  Animated tile support
+-  Tooltip support
+-  Expandable/collapsable panels
+-  And much more!
 
 ---
 
