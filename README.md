@@ -62,7 +62,7 @@ tm_canvas_end(&canvas);
 - No `malloc` or hidden heap usage
 - Layout state is **entirely static and explicit**
 
-****Zero Dependencies Beyond Raylib**
+Zero Dependencies Beyond Raylib**
 
 - Pure, low level **C99** codebase
 - **Raylib** handles rendering, input, and font loading
