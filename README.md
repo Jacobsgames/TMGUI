@@ -61,30 +61,25 @@ tm_canvas_end(&canvas);
 
 No `malloc`s — all layout state is static and explicit.
 
----
+
 
 ✅ **Zero Dependencies Beyond Raylib**
 
 - Pure **C99**
 - **Raylib** handles rendering, input, and font loading
 
----
+
 
 🛠️ **Planned Features**
 
-- 🔲 Vertical alignment support for labels/buttons  
 - 🔲 Scroll marquee for clipped label text  
-- 🔲 Style inheritance per-widget  
 - 🔲 Input widgets (text fields, sliders, checkboxes)  
-- 🔲 Improved hover/click handling for grid-sized buttons
 
 ---
 
 📄 **License**
 
 **MIT**
-
----
 
 ## Author
 
