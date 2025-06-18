@@ -9,22 +9,23 @@ static Font current_font = {0};
 static Font fallback_font = {0};
 static int layout_spacing = 0;
 static Texture2D tile_atlas;
-static int g_tm_scale, g_tm_offX, g_tm_offY;
+static int canvas_scale, canvas_x, canvas_y;
 
-tmgui_frame gui_frame = {0};
-static tm_align_mode g_tm_align = ALIGN_LEFT;
+layout_context gui_context = {0};
+
+static tm_align_mode g_tm_align = ALIGNMENT_LEFT;
 
 // --- Transform ---
-void tm_update_transform(int scale, int offX, int offY) {
-    g_tm_scale = scale;
-    g_tm_offX = offX;
-    g_tm_offY = offY;
+void tm_update_transform(int scale, int pos_x, int pos_y) {
+    canvas_scale = scale;
+    canvas_x = pos_x;
+    canvas_y = pos_y;
 }
 
 Vector2 tm_mouse_grid(void) {
     Vector2 m = GetMousePosition();
-    float px = (m.x - g_tm_offX) / (float)g_tm_scale;
-    float py = (m.y - g_tm_offY) / (float)g_tm_scale;
+    float px = (m.x - canvas_x) / (float)canvas_scale;
+    float py = (m.y - canvas_y) / (float)canvas_scale;
     return (Vector2){ px / cell_w, py / cell_h };
 }
 
@@ -71,8 +72,8 @@ void tm_align(tm_align_mode mode) {
 
 
 // --- Canvas ---
-tm_canvas tm_canvas_init(int grid_w, int grid_h, bool transparent) {
-    tm_canvas c = {0};
+ui_canvas ui_canvas_init(int grid_w, int grid_h, bool transparent) {
+    ui_canvas c = {0};
     c.grid_w = grid_w;
     c.grid_h = grid_h;
     c.transparent = transparent;
@@ -81,12 +82,12 @@ tm_canvas tm_canvas_init(int grid_w, int grid_h, bool transparent) {
     return c;
 }
 
-void tm_canvas_begin(tm_canvas *c) {
+void ui_canvas_begin(ui_canvas *c) {
     BeginTextureMode(c->target);
     ClearBackground(c->transparent ? BLANK : BLACK);
 }
 
-void tm_canvas_end(tm_canvas *c) {
+void ui_canvas_end(ui_canvas *c) {
     EndTextureMode();
     int sw = GetScreenWidth(), sh = GetScreenHeight();
     int sx = sw / (c->grid_w * cell_w), sy = sh / (c->grid_h * cell_h);
@@ -141,9 +142,9 @@ void tm_label(const char *label, gridrect r) {
 
     // lignment logic here
     int text_x = final.x + 1; // Default: left
-    if (g_tm_align == ALIGN_CENTER)
+    if (g_tm_align == ALIGNMENT_CENTER)
         text_x = final.x + (final.w - tw) / 2;
-    else if (g_tm_align == ALIGN_RIGHT)
+    else if (g_tm_align == ALIGNMENT_RIGHT)
         text_x = final.x + final.w - tw - 1;
 
     tm_text(label, text_x, final.y, current_style.base.foreground);
@@ -182,9 +183,9 @@ bool tm_button(const char *label, gridrect recti) {
 
     // --- Alignment ---
     int text_x = use.x + 1;
-    if (g_tm_align == ALIGN_CENTER)
+    if (g_tm_align == ALIGNMENT_CENTER)
         text_x = use.x + (use.w - txtw) / 2;
-    else if (g_tm_align == ALIGN_RIGHT)
+    else if (g_tm_align == ALIGNMENT_RIGHT)
         text_x = use.x + use.w - txtw - 1;
 
     tm_text(label, text_x, use.y, style->foreground);
@@ -194,37 +195,46 @@ bool tm_button(const char *label, gridrect recti) {
 
 // --- Layout ---
 gridrect tm_next_cell(int w, int h) {
-    int x = gui_frame.cursor_x;
-    int y = gui_frame.cursor_y;
+    int x = gui_context.cursor_x;
+    int y = gui_context.cursor_y;
 
-    if (gui_frame.mode == LAYOUT_HBOX) gui_frame.cursor_x += w + layout_spacing;
-    else if (gui_frame.mode == LAYOUT_VBOX) gui_frame.cursor_y += h + layout_spacing;
+    if (gui_context.mode == LAYOUT_HBOX) gui_context.cursor_x += w + layout_spacing;
+    else if (gui_context.mode == LAYOUT_VBOX) gui_context.cursor_y += h + layout_spacing;
 
     return (gridrect){ x, y, w, h };
 }
 
 void tm_vbox(gridrect r) {
-    gui_frame.mode = LAYOUT_VBOX;
-    gui_frame.cursor_x = (r.x < 0 ? 0 : r.x);
-    gui_frame.cursor_y = (r.y < 0 ? 0 : r.y);
+    gui_context.mode = LAYOUT_VBOX;
+    gui_context.cursor_x = (r.x < 0 ? 0 : r.x);
+    gui_context.cursor_y = (r.y < 0 ? 0 : r.y);
 }
 
 void tm_hbox(gridrect r) {
-    gui_frame.mode = LAYOUT_HBOX;
-    gui_frame.cursor_x = (r.x < 0 ? 0 : r.x);
-    gui_frame.cursor_y = (r.y < 0 ? 0 : r.y);
+    gui_context.mode = LAYOUT_HBOX;
+    gui_context.cursor_x = (r.x < 0 ? 0 : r.x);
+    gui_context.cursor_y = (r.y < 0 ? 0 : r.y);
 }
+
+
+Font mycustomfont;
 
 // --- Main ---
 int main(void) {
+
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     int cw = 8, ch = 8, gw = 80, gh = 45;
     InitWindow(gw * cw * 2, gh * ch * 2, "TMGUI Style Test");
     tmgui_init(cw, ch);
     SetTargetFPS(60);
 
-    tm_canvas canvas = tm_canvas_init(gw, gh, false);
+    mycustomfont = LoadFontEx("C:/Code/tmgui/fonts/CHUNKY.ttf", cell_h, NULL, 0);
+    SetTextureFilter(mycustomfont.texture, TEXTURE_FILTER_POINT);
 
+    ui_canvas canvas = ui_canvas_init(gw, gh, false);
+
+    /*
     tm_style theme = {
         .base = STYLE_CONSOLE,
         .button = {
@@ -234,42 +244,55 @@ int main(void) {
         },
         .font = current_font
     };
+    */
+
+   
+
     tm_set_style(&STYLE_TMGUI);
 
     while (!WindowShouldClose()) {
-        tm_canvas_begin(&canvas);
+
+         
+
+
+
+        ui_canvas_begin(&canvas);
 
         tm_vbox(RECT(2, 2, 20, 0));
-        if (tm_button("Play Game", AUTO)) {
+        if (tm_button("THIS PRINTS TO CONSOLE", AUTO)) {
             TraceLog(LOG_INFO, "Play button clicked!");
         }
-        tm_set_spacing(2);
-        tm_button("Options", AUTO);
-        tm_button("Exit", AUTO);
+        tm_set_spacing(1);
+        tm_button("spaced", AUTO);
+        tm_button("out", AUTO);
+        tm_button("BUTTONS!", AUTO);
+        ALIGN_CENTER;
+        tm_button("CENTER + SIZED",SIZE(16, 5));
         tm_set_spacing(0);
-        tm_button("BUTTON", AUTO);
-        tm_set_spacing(0);
-
-
-tm_align(ALIGN_CENTER);
-tm_label("Centered label", SIZE(30, 1));
-
-tm_align(ALIGN_RIGHT);
-tm_label("Right aligned", SIZE(30, 1));
-tm_align(ALIGN_LEFT);
-tm_label("LEFT aligned", SIZE(30, 1));
-tm_align(ALIGN_CENTER);
-tm_button("Centered ", SIZE(30, 1));
-
-tm_align(ALIGN_RIGHT);
-tm_button("Right aligned", SIZE(30, 1));
-tm_align(ALIGN_LEFT);
-tm_button("LEFT aligned", SIZE(30, 1));
+        tm_label("Centered label",SIZE(30, 1));
+        ALIGN_RIGHT;
+        tm_label("Right aligned",SIZE(30, 1));
+        ALIGN_LEFT;
+        tm_label("LEFT aligned",SIZE(30, 1));
+        ALIGN_CENTER;
+        tm_button("Centered ", SIZE(30, 1));
+        ALIGN_RIGHT;
+        tm_button("Right aligned",SIZE(30, 1));
+        ALIGN_LEFT;
+        tm_button("LEFT aligned",SIZE(30, 1));
+        
+        tm_set_font(&mycustomfont);
+        ALIGN_RIGHT;
+        tm_label("Right custom font",SIZE(30, 1));
+        tm_label("defined by user",SIZE(30, 1));
+        tm_label("Right aligned",SIZE(30, 1));
+        tm_label("now after this, load fallback font",SIZE(30, 1));
+        
 
         tm_set_font(NULL);
-        tm_text("This is drawn using the theme's font!", 30, 12, WHITE);
+        tm_text("This is drawn using the theme's font! set_font(NULL)", 1, 42, WHITE);
 
-        tm_canvas_end(&canvas);
+        ui_canvas_end(&canvas);
 
         BeginDrawing();
         ClearBackground(DARKGRAY);

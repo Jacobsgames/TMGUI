@@ -15,26 +15,30 @@ typedef struct {
     int scale;
     int offset_x, offset_y;
     bool transparent;
-} tm_canvas;
+} ui_canvas;
 
 // --- Layout Mode ---
 typedef enum { LAYOUT_NONE, LAYOUT_HBOX, LAYOUT_VBOX } LayoutMode;
 
-typedef enum { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } tm_align_mode;
+typedef enum { ALIGNMENT_LEFT, ALIGNMENT_CENTER, ALIGNMENT_RIGHT } tm_align_mode;
 
 typedef struct {
     LayoutMode mode;
     int cursor_x;
     int cursor_y;
-} tmgui_frame;
+} layout_context;
 
-extern tmgui_frame gui_frame;
+extern layout_context gui_context;
 
 // --- Helpers ---
 #define AUTO ((gridrect){ -1, -1, 0, 0 })
 #define SIZE(w,h) ((gridrect){ -1, -1, (w), (h) })
 #define POS(x,y) ((gridrect){ x, y, 0, 0 })  
 #define RECT(x,y,w,h) ((gridrect){ x, y, w, h })
+
+#define ALIGN_LEFT   tm_align(ALIGNMENT_LEFT)
+#define ALIGN_CENTER tm_align(ALIGNMENT_CENTER)
+#define ALIGN_RIGHT  tm_align(ALIGNMENT_RIGHT)
 
 // --- Tile Atlas ---
 typedef struct { int x, y; } atlaspos;
@@ -121,8 +125,8 @@ void tm_update_transform(int scale, int offX, int offY);
 Vector2 tm_mouse_grid(void);
 
 // --- Canvas Abstraction ---
-tm_canvas tm_canvas_init(int grid_w, int grid_h, bool transparent);
-void tm_canvas_begin(tm_canvas *c);
-void tm_canvas_end(tm_canvas *c);
+ui_canvas ui_canvas_init(int grid_w, int grid_h, bool transparent);
+void ui_canvas_begin(ui_canvas *c);
+void ui_canvas_end(ui_canvas *c);
 
 #endif // TMGUI_H
