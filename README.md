@@ -1,4 +1,4 @@
-# TMGUI
+# TMGUI (ALPHA)
 
 **TMGUI** is a clean, minimalistic, grid-based GUI toolkit written in C. It is designed for pixel-perfect interfaces, tile-based engines, and text-mode aesthetics. Inspired by old-school OS interfaces and fixed-layout systems, TMGUI emphasizes predictability, simplicity, and total layout control.
 
@@ -21,7 +21,7 @@
 
 ✅ **Alignment Support**  
 - Horizontal: `ALIGN_LEFT`, `ALIGN_CENTER`, `ALIGN_RIGHT`  
-- Vertical: `ALIGN_TOP`, `ALIGN_CENTER`, `ALIGN_BOTTOM` (WIP)  
+- Vertical: `ALIGN_TOP`, `ALIGN_CENTER`, `ALIGN_BOTTOM`  
 - Controlled via `tm_align(ALIGN(H, V))` macro  
 
 ✅ **Style System**  
@@ -76,4 +76,6 @@ No `malloc`s — all layout state is static and explicit.
 
 **Jacob Holland**  
 Made with love.
+
+README written by GPT as placeholder. 
 
