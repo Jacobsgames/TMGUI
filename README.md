@@ -21,7 +21,7 @@
 - The auto scaling sizes your canvas to fit the current window size, adding letter/pillarboxing where needed
 - Canvas will only scale to pixel perfect multiples, no weird artefacts! 
 
-**GUI Elements and Primatives (many more to come!)**  
+**GUI Elements and Primitives (many more to come!)**  
 - `tm_label(...)`, `tm_button(...)`, `tm_rect(...)`, `tm_text(...)`, `tm_drawtile(...)`  
 
 **Text Alignment and Element Spacing Support**
