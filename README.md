@@ -6,9 +6,16 @@
 ![TMGUI demo](EXAMPLE.gif)
 
 ## Features
-**Tile/Grid-Based Layout**  
-- Fixed cell dimensions (`cell_w`, `cell_h`)  
-- Grid-rect based positioning with optional auto-placement (`AUTO`)  
+**Grid-Based Layout and Container Support **  
+- Fixed cell dimensions (`cell_w`, `cell_h`) defined with `tm_init(w,h)` 
+- Grid-rect based positioning with optional placement macros for use inside v/hboxes 
+- Supports `AUTO` (full auto), `POS(x,y)` (manual pos, auto size) and `SIZE(w,h)` (auto pos, manual size)
+- In `AUTO` or `POS(x,y)` mode, an elements width expands in `tm_vbox`, and height expands in `tm_hbox`  
+
+**Grid-Based Pixel-Perfect Canvas Autoscaling**
+- Define your programs grid dimentions (80x45 = 16:9)
+- The autoscalingkeeps your grid canvas at the maximum size, adding letter/pillarboxing when needed
+- Canvas will only scale to pixel perfect multiples
 
 **Flat Layout System**  
 - Supports `tm_vbox(...)` and `tm_hbox(...)` with deterministic cursor-based layout  
@@ -22,16 +29,6 @@
 - Controlled via `ALIGN(RIGHT,CENTER)`, `ALIGNH(RIGHT)`, `ALIGNV(TOP)` macros  
 - Space out elements in a vbox/hbox!
 - Controlled via `tm_add_spacing(1)` to overide the current spacing  
-
-**AUTO Layout Container Support **  
-- Use `AUTO` in any gridrect to auto-size/position elements  
-- Width expands in `tm_vbox`, height expands in `tm_hbox`  
-- Supports macros like `SIZE(w,h)`, `WIDTH(w)`, `HEIGHT(h)`, `AUTO`  
-
-**Grid-Based Pixel-Perfect Canvas Autoscaling**
-- Define your programs grid dimentions (80x45 = 16:9)
-- The autoscalingkeeps your grid canvas at the maximum size, adding letter/pillarboxing when needed
-- Canvas will only scale to pixel perfect multiples
 
 **Style System**  
 - `tm_style` struct encapsulates styling (foreground, background, border color and width), font and button states (`normal`, `hover`, `active`)  
