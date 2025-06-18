@@ -1,2 +1,2 @@
 # tmgui
-TextMode IMGUI written in C with raylib
+TextMode IMGUI being developed in C with raylib.
