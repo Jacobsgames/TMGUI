@@ -31,13 +31,17 @@
 - Controlled via `tm_add_spacing(1)` to overide the current spacing  
 
 **Style System**  
-- `tm_style` struct encapsulates styling (foreground, background, border color and width), font and button states (`normal`, `hover`, `active`)  
-- Per-element style support using `tm_set_style()` to set the global `current_style` 
-- Per-element font overide using `tm_set_font()`
-- Easily define reusable themes  
+- `tm_style` struct controls:
+  - Foreground / background color
+  - Border color / width
+  - Font override
+  - Button states: normal, hover, active
+- Per-element style override with `tm_set_style(...)`
+- Per-element font with `tm_set_font(...)`
+- Easy to define multiple reusable themes (e.g., `STYLE_TMGUI`, `STYLE_GREY`)
 
-**Simple GUI layout syntax**  
-- Clean syntax for GUI layout:  
+**DSL like layout syntax**  
+- Clean syntax for GUI layout code:  
   
 ```c
 tm_canvas canvas = tm_canvas_init(80, 45, false);
@@ -60,7 +64,7 @@ tm_canvas_end(&canvas);
 
 **Zero Dependencies Beyond Raylib**
 
-- Pure, low level **C99** code
+- Pure, low level **C99** codebase
 - **Raylib** handles rendering, input, and font loading
 
 🛠️**Planned Features**
