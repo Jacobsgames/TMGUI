@@ -40,8 +40,8 @@
 - Per-element font override with `tm_set_font(...)`
 - Easy to define multiple reusable styles (e.g., `STYLE_TMGUI`, `STYLE_GREY`)
 
-**DSL like layout syntax**  
-- Clean syntax for GUI layout code:  
+**Clean DSL-like layout syntax**  
+- Efficient syntax for GUI layout code:  
   
 ```c
 tm_canvas canvas = tm_canvas_init(80, 45, false);
