@@ -17,10 +17,8 @@
 - Define the canvas grid dimensions with `tm_canvas_init(w,h,trans)` (80x45 = 16:9)
 - The auto scaling sizes your canvas to fit the current window size, adding letter/pillarboxing where needed
 - Canvas will only scale to pixel perfect multiples, no weird artefacts! 
-
-**Flat Layout System**  
 - Supports `tm_vbox(...)` and `tm_hbox(...)` with deterministic cursor-based layout  
-- No nested containers — one container at a time  
+- Simple lat layout system, no nested containers — one container at a time! 
 
 **Basic Primitives**  
 - `tm_label(...)`, `tm_button(...)`, `tm_rect(...)`, `tm_text(...)`, `tm_drawtile(...)`  
