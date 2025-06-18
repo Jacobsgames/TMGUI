@@ -1,7 +1,7 @@
 
 ![TMGUI demo](LOGO.png)
 
-**TMGUI** is a minimalist 'TextMode' IMGUI Library (Immediate Mode GUI) being developed in C with Raylib at its core (https://www.raylib.com/). Designed for pixel-perfect grid-based interfaces, tile-based games/toys/tools, and text-mode aesthetics. Inspired by old-school OS interfaces, terminal displays and the modern TextMode art movement.<br> 
+**TMGUI** is a minimalist 'TextMode' IMGUI Library (Immediate Mode GUI) being developed in C with Raylib at its core (https://www.raylib.com/). Designed for pixel-perfect grid-based interfaces, tile-based games, toys and tools, and text-mode aesthetics. Inspired by old-school OS interfaces, terminal displays and the modern TextMode art movement.<br> 
 **TMGUI** emphasizes predictability, simplicity and total layout control with a DSL like syntax for layout code.
 
 ![TMGUI demo](EXAMPLE.gif)
@@ -19,7 +19,7 @@
 - The auto scaling sizes your canvas to fit the current window size, adding letter/pillarboxing where needed
 - Canvas will only scale to pixel perfect multiples, no weird artefacts! 
 - Supports `tm_vbox(...)` and `tm_hbox(...)` with deterministic cursor-based layout  
-- Simple lat layout system, no nested containers — one container at a time! 
+- Simple, flat layout system, no nested containers — one container at a time! 
 
 **Basic Primitives**  
 - `tm_label(...)`, `tm_button(...)`, `tm_rect(...)`, `tm_text(...)`, `tm_drawtile(...)`  
