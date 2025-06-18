@@ -13,7 +13,7 @@
 - In `AUTO` or `POS(x,y)` mode, an elements width expands in `tm_vbox`, and height expands in `tm_hbox`  
 
 **Grid-Based Pixel-Perfect Canvas Autoscaling**
-- Define your programs grid dimentions (80x45 = 16:9) with `tm_init(w,h)` 
+- Define your programs grid dimentions with `tm_init(w,h)` (80x45 = 16:9)
 - The auto scaling sizes your canvas to fit the current window size, adding letter/pillarboxing where needed
 - Canvas will only scale to pixel perfect multiples, no weird artefacts! 
 
