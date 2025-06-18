@@ -47,7 +47,7 @@
 tm_canvas canvas = tm_canvas_init(80, 45, false);
 tm_canvas_begin(&canvas);
 
-    tm_set_spacing(1);
+	tm_set_spacing(1);
 	tm_label("MANUALY TRANSFORMED", RECT(20, 0, 20, 3));
 	tm_label("MANUALY POSITIONED", POS(20, 4));
 
