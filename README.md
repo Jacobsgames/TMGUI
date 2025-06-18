@@ -34,7 +34,7 @@
 - `tm_style` struct controls:
   - Foreground / background color
   - Border color / width
-  - Font override
+  - Font
   - Button states: normal, hover, active
 - Per-element style override with `tm_set_style(...)`
 - Per-element font with `tm_set_font(...)`
