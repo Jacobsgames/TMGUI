@@ -50,7 +50,7 @@ tm_canvas_end(&canvas);
 ```
  **No Dynamic Allocation**
 
-No `malloc`s — all layout state is static and explicit.
+- No `malloc`s — all layout state is static and explicit.
 
 **Zero Dependencies Beyond Raylib**
 
