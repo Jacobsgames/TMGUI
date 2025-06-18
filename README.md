@@ -28,7 +28,7 @@
 - Align text in Labels and Buttons!  
 - Controlled via `ALIGN(RIGHT,CENTER)`, `ALIGNH(RIGHT)`, `ALIGNV(TOP)` macros  
 - Space out elements in a vbox/hbox!
-- Controlled via `tm_add_spacing(1)` to overide the current spacing  
+- Controlled via `tm_add_spacing(n)` to overide the current spacing  
 
 **Style System**  
 - `tm_style` struct controls an elements:
