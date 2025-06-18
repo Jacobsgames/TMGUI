@@ -286,41 +286,77 @@ int main(void) {
 
 
         ui_canvas_begin(&canvas);
-        
-            tm_set_style(&STYLE_TMGUI);
 
+            tm_set_style(&STYLE_GREY);
+            tm_set_spacing(1);
+            
+
+            tm_hbox(RECT(0, 0, 80, 1));
+            tm_button("FILE",AUTO);
+            tm_button("VIEW",AUTO);
+            tm_button("TOOLS",AUTO);
             tm_set_spacing(0);
-            DRAWTILE(1,1,TILE(10,10));
-            tm_vbox(RECT(2, 2, 20, 0));
-
-                ALIGN(CENTER,CENTER);
-                tm_label("Centered label",SIZE(20, 3));
-
-                ALIGNH(LEFT);
-                tm_button("OPTION",SIZE(20, 1));
-                tm_button("option",SIZE(20, 1));
-                tm_button("settings ", SIZE(20, 1));
-                tm_button("dogs",SIZE(20, 1));
+            tm_button("HELP",AUTO);
 
 
-                ALIGN(CENTER,CENTER);
-                if (tm_button("PRINTS TO CONSOLE",SIZE(20, 5))) {
-                    TraceLog(LOG_INFO, "Play button clicked!");
-                }
-                TEXT("This is drawn using the theme's font! set_font(NULL)", 1, 42, WHITE);
+            
+            
+            DRAWTILE(78,1,TILE(10,10));
+            TEXT("WELCOME TO IMGUI!", 30, 0, WHITE);
+            TEXT("THIS TEXT IS MANUALY PLACED HERE", 0, 21, WHITE);
+            tm_set_font(&mycustomfont);
+
+            TEXT("WE SUPPORT DIFFRENT FONTS", 30, 1, WHITE);
+            tm_set_font(NULL);
+            tm_vbox(RECT(0, 2, 20, 0));
+
 
                 tm_set_style(&STYLE_GREY);
 
+                tm_set_spacing(0);
+                
+
+                
+
                        ALIGNH(CENTER);
-                tm_label("Centered label",SIZE(20, 1));
+                tm_label("VBOX",SIZE(20, 3));
 
                 ALIGN(CENTER,CENTER);
-                tm_button("OPTION",SIZE(20, 3));
-                tm_button("option",SIZE(20, 3));
-                tm_button("settings ", SIZE(20, 3));
-                tm_button("dogs",SIZE(20, 3));
-                tm_set_spacing(4);
-                tm_button("(start 4 space)",SIZE(20, 3));
+                tm_button("OPTION1",SIZE(20, 3));
+                tm_button("OPTION2",SIZE(20, 3));
+                tm_button("OPTION3", SIZE(20, 3));
+                tm_button("OPTION4",SIZE(20, 3));
+                tm_set_spacing(3);
+                tm_button("set_spacing(3)",SIZE(20, 3));
+                ALIGN(CENTER,CENTER);
+                tm_set_spacing(1);
+                if (tm_button("BIG BUTTON",SIZE(20, 5))) {TraceLog(LOG_INFO, "Play button clicked!");}
+                tm_set_spacing(0);
+                tm_set_style(&STYLE_TMGUI);
+                ALIGN(CENTER,CENTER);
+                ALIGNH(LEFT);
+                tm_label("Style + Align Modes",SIZE(20, 1));
+
+                
+                tm_button("LEFT1",SIZE(20, 1));
+                tm_button("LEFT2",SIZE(20, 1));
+
+                ALIGNH(RIGHT);
+                tm_button("RIGHT1", SIZE(20, 1));
+                tm_button("RIGHT2", SIZE(20, 1));
+                ALIGN(CENTER,CENTER);
+                tm_button("CENTER1", SIZE(20, 1));
+                tm_button("CENTER2", SIZE(20, 1));
+                tm_button("CENTER TALL", SIZE(20, 3));
+
+                tm_button("BIG MANUAL POS/SIZE", RECT(21, 2,22,9));
+                tm_hbox(RECT(0, 42, 80, 3));
+            tm_button("HBOX",SIZE(10,3));
+            tm_button("OF",SIZE(10,3));
+            tm_button("TALL",SIZE(10,3));
+            tm_button("CENTERED",SIZE(10,3));
+            tm_button("BUTTONS",SIZE(10,3));
+ 
 
 
 
