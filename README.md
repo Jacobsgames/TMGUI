@@ -58,11 +58,11 @@ tm_canvas_begin(&canvas);
 
 tm_canvas_end(&canvas);
 ```
- **No Dynamic Allocation**
+**No Dynamic Allocation**
+- No `malloc` or hidden heap usage
+- Layout state is **entirely static and explicit**
 
-- No `malloc`s — all layout state is static and explicit.
-
-**Zero Dependencies Beyond Raylib**
+****Zero Dependencies Beyond Raylib**
 
 - Pure, low level **C99** codebase
 - **Raylib** handles rendering, input, and font loading
