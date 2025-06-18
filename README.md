@@ -36,8 +36,8 @@
   - Border color / width
   - Font
   - Button states: normal, hover, active
-- Per-element style override with `tm_set_style(...)`
-- Per-element font with `tm_set_font(...)`
+- Per-element style with `tm_set_style(...)`
+- Per-element font override with `tm_set_font(...)`
 - Easy to define multiple reusable themes (e.g., `STYLE_TMGUI`, `STYLE_GREY`)
 
 **DSL like layout syntax**  
