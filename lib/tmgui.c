@@ -7,11 +7,11 @@
 
 static int cell_w, cell_h;
 
-static tm_style current_style;
+static tm_theme current_theme;
 static Font current_font = {0};
 static Font fallback_font = {0};
 static int layout_spacing = 0;
-static Texture2D tile_atlas;
+static Texture2D glyph_atlas;
 static int canvas_scale, canvas_x, canvas_y;
 
 layout_context gui_context = {0};
@@ -45,20 +45,19 @@ static inline Rectangle gridrect_to_pixelrect(gridrect r) { // Converts a gridre
     };
 }
 
-static inline gridpos gridrect_pos_offset(gridrect r, int x_off, int y_off) { //returns the POS of a grid rect, offset by input
-    return (gridpos){ r.x + x_off, r.y + y_off };
-}
+
 
 static inline gridrect gridrect_offset(gridrect r, int x_off, int y_off) { //returns a copy of a grid rect, offset by input
     return (gridrect){ r.x + x_off, r.y + y_off, r.w, r.h };
 }
 
-static inline bool gridrect_valid(gridrect r) { //checks if a gridrect has valid size (eg above 0 x,y)
-    return (r.w > 0 && r.h > 0);
+// Relative offset of a CELL from a parent rect
+static inline gridrect offset_cell(gridrect parent, int dx, int dy) {
+    return CELL(parent.x + dx, parent.y + dy);
 }
 
-static inline Vector2 gridpos_to_pixelpos(gridpos p) { // Converts a gridpos to a pixel-space Vector2
-    return (Vector2){ p.x * cell_w, p.y * cell_h };
+static inline bool gridrect_valid(gridrect r) { //checks if a gridrect has valid size (eg above 0 x,y)
+    return (r.w > 0 && r.h > 0);
 }
 
 
@@ -71,17 +70,21 @@ static inline int pixels_to_grid_y(float pixels) { // Converts vertical pixel di
     return (int)(pixels / (float)cell_h);
 }
 
-static inline bool gridpos_equal(gridpos a, gridpos b) { // checks equality between two grid positions
+// Replace gridpos_equal with rect position equality
+static inline bool cell_equal(gridrect a, gridrect b) {
     return (a.x == b.x && a.y == b.y);
 }
 
-static inline bool gridrect_contains(gridrect r, gridpos p) { // check if a gridpos is inside a rect
-    return (p.x >= r.x && p.x < r.x + r.w &&
-            p.y >= r.y && p.y < r.y + r.h);
+// Check if a CELL (gridrect with w=1,h=1) is inside a bigger gridrect
+static inline bool rect_contains_cell(gridrect r, gridrect cell) {
+    return (cell.x >= r.x && cell.x < r.x + r.w &&
+            cell.y >= r.y && cell.y < r.y + r.h &&
+            cell.w == 1 && cell.h == 1);
 }
 
-static inline gridpos gridrect_center(gridrect r) { //  get the center point of a rect
-    return (gridpos){ r.x + r.w / 2, r.y + r.h / 2 };
+// Get center CELL of a rect
+static inline gridrect rect_center_cell(gridrect r) {
+    return CELL(r.x + r.w / 2, r.y + r.h / 2);
 }
 
 
@@ -97,28 +100,28 @@ void tmgui_init(int cell_width, int cell_height) {
     fallback_font = LoadFontEx("C:/Code/tmgui/fonts/FROGBLOCK.ttf", cell_h, NULL, 0);
     SetTextureFilter(fallback_font.texture, TEXTURE_FILTER_POINT);
 
-    current_style = STYLE_TMGUI;
-    current_style.font = fallback_font;
+    current_theme = THEME_GREEN;
+    current_theme.font = fallback_font;
 
-    tile_atlas = LoadTexture("C:/Code/tmgui/tiles/T_FROGBLOCK.png");
-    SetTextureFilter(tile_atlas, TEXTURE_FILTER_POINT);
+    glyph_atlas = LoadTexture("C:/Code/tmgui/glyphs/T_FROGBLOCK.png");
+    SetTextureFilter(glyph_atlas, TEXTURE_FILTER_POINT);
 }
 
 void tmgui_shutdown(void) {
     UnloadFont(current_font);
-    UnloadTexture(tile_atlas);
+    UnloadTexture(glyph_atlas);
 }
 
 // --- Config ---
-void tm_set_style(const tm_style *style) {
-    if (style) current_style = *style;
+void tm_set_theme(const tm_theme *theme) {
+    if (theme) current_theme = *theme;
 }
 
 void tm_set_font(Font *font) {
     if (font && font->texture.id != 0) {
         current_font = *font;
     } else {
-        current_font = current_style.font;
+        current_font = current_theme.font;
     }
 }
 
@@ -134,8 +137,8 @@ void tm_align_vertical(align_mode mode) {
     v_align = mode;
 }
 
-// Returns a gridpos for text starting point aligned inside rect
-gridpos tm_align_text_pos(gridrect container, int text_width_in_cells, int text_height_in_cells) {
+// Returns a gridrect (CELL) for text starting point aligned inside rect
+gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text_height_in_cells) {
     int x = container.x; // padding now handled explicitly in caller
     int y = container.y;
 
@@ -143,7 +146,7 @@ gridpos tm_align_text_pos(gridrect container, int text_width_in_cells, int text_
     if (h_align == ALIGN_CENTER)
         x = container.x + (container.w - text_width_in_cells) / 2;
     else if (h_align == ALIGN_RIGHT)
-        x = container.x + container.w - text_width_in_cells - 1;
+        x = container.x + container.w - text_width_in_cells;
 
     // Vertical alignment
     if (v_align == ALIGN_CENTER)
@@ -151,7 +154,7 @@ gridpos tm_align_text_pos(gridrect container, int text_width_in_cells, int text_
     else if (v_align == ALIGN_BOTTOM)
         y = container.y + container.h - text_height_in_cells;
 
-    return (gridpos){ x, y };
+    return CELL(x, y); // Return as a CELL gridrect
 }
 
 
@@ -193,7 +196,7 @@ void tm_canvas_end(tm_canvas *c) {
 
 static Font get_active_font(void) {
     if (current_font.texture.id != 0) return current_font;
-    if (current_style.font.texture.id != 0) return current_style.font;
+    if (current_theme.font.texture.id != 0) return current_theme.font;
     return fallback_font;
 }
 
@@ -207,105 +210,121 @@ inline void tm_draw_fill_rect(gridrect r, Color color) {
     DrawRectangle(px.x, px.y, px.width, px.height, color);
 }
 
-inline void tm_draw_fill_cell(gridpos p, Color color) {
+inline void tm_draw_fill_cell(gridrect cell, Color color) {
     // Convert single-cell gridrect to pixel-space Rectangle
-    Rectangle cell = gridrect_to_pixelrect((gridrect){ p.x, p.y, 1, 1 });
+    Rectangle fill = gridrect_to_pixelrect((gridrect){ cell.x, cell.y, 1, 1 });
     // Draw filled rectangle using raylib helper
-    DrawRectangleRec(cell, color);
+    DrawRectangleRec(fill, color);
 }
 
-void tm_draw_glyph(gridpos pos, atlaspos tile, Color fg, Color bg) {
-    Rectangle dest = (Rectangle){ pos.x * cell_w, pos.y * cell_h, cell_w, cell_h };
-    Rectangle src = (Rectangle){ tile.x * cell_w, tile.y * cell_h, cell_w, cell_h };
-    if (bg.a > 0) tm_draw_fill_cell(pos, bg);
-    DrawTexturePro(tile_atlas, src, dest, (Vector2){0, 0}, 0, fg);
+void tm_draw_glyph(gridrect cell, atlaspos glyph, Color fg, Color bg) {
+    Rectangle dest = (Rectangle){ cell.x * cell_w, cell.y * cell_h, cell_w, cell_h };
+    Rectangle src = (Rectangle){ glyph.x * cell_w, glyph.y * cell_h, cell_w, cell_h };
+    if (bg.a > 0) tm_draw_fill_cell(cell, bg);
+    DrawTexturePro(glyph_atlas, src, dest, (Vector2){0, 0}, 0, fg);
 }
 
-void tm_draw_text(const char *text, gridpos pos, Color fg, Color bg) {
+void tm_draw_text(const char *text, gridrect cell, Color fg, Color bg) {
     Font font = get_active_font();
+
     for (int i = 0; text[i]; i++) {
-        gridpos p = { pos.x + i, pos.y };
-        tm_draw_fill_cell(p, bg); // Fill background for this glyph cell
-        Rectangle cell = gridrect_to_pixelrect((gridrect){ p.x, p.y, 1, 1 }); // Draw glyph at pixel position of cell
-        DrawTextCodepoint(font, text[i], (Vector2){ cell.x, cell.y }, cell_h, fg); // raylib func for char draw (takes pixel pos)
+        // Position of each character cell (offset horizontally)
+        gridrect char_cell = { cell.x + i, cell.y, 1, 1 }; // Ensure w and h are 1 for character cells
+
+        // Fill background for character cell
+        tm_draw_fill_rect(char_cell, bg); // Use tm_draw_fill_rect as char_cell is a gridrect
+
+        // Convert grid rect to pixel position
+        Rectangle px = gridrect_to_pixelrect(char_cell);
+
+        // Draw the character at pixel position
+        DrawTextCodepoint(font, text[i], (Vector2){ px.x, px.y }, cell_h, fg);
     }
 }
 
-void tm_draw_panel(gridrect r, const panel_kit *kit, Color fg, Color bg) {
+void tm_draw_panel(gridrect r) {
     if (!gridrect_valid(r)) return;
 
+    tm_panel_style style = current_theme.panel;
+    panel_kit *kit = &style.kit;
+    Color fg = style.foreground;
+    Color bg = style.background;
+
+    // Fill panel background first
     tm_draw_fill_rect(r, bg);
 
     if (r.h == 1) {
         atlaspos left  = (kit->cap_left.x  >= 0) ? kit->cap_left  : kit->corner_tl;
         atlaspos right = (kit->cap_right.x >= 0) ? kit->cap_right : kit->corner_tr;
 
-        tm_draw_glyph(gridrect_pos_offset(r, 0, 0), left, fg, bg);
+        tm_draw_glyph(gridrect_offset(r, 0, 0), left, fg, bg);
         for (int i = 1; i < r.w - 1; i++)
-            tm_draw_glyph(gridrect_pos_offset(r, i, 0), kit->edge_horizontal, fg, bg);
+            tm_draw_glyph(gridrect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
         if (r.w > 1)
-            tm_draw_glyph(gridrect_pos_offset(r, r.w - 1, 0), right, fg, bg);
+            tm_draw_glyph(gridrect_offset(r, r.w - 1, 0), right, fg, bg);
         return;
     }
 
-    tm_draw_glyph(gridrect_pos_offset(r, 0, 0), kit->corner_tl, fg, bg);
-    tm_draw_glyph(gridrect_pos_offset(r, r.w - 1, 0), kit->corner_tr, fg, bg);
-    tm_draw_glyph(gridrect_pos_offset(r, 0, r.h - 1), kit->corner_bl, fg, bg);
-    tm_draw_glyph(gridrect_pos_offset(r, r.w - 1, r.h - 1), kit->corner_br, fg, bg);
+    // Draw corners
+    tm_draw_glyph(gridrect_offset(r, 0, 0), kit->corner_tl, fg, bg);
+    tm_draw_glyph(gridrect_offset(r, r.w - 1, 0), kit->corner_tr, fg, bg);
+    tm_draw_glyph(gridrect_offset(r, 0, r.h - 1), kit->corner_bl, fg, bg);
+    tm_draw_glyph(gridrect_offset(r, r.w - 1, r.h - 1), kit->corner_br, fg, bg);
 
+    // Draw top and bottom edges
     for (int i = 1; i < r.w - 1; i++) {
-        tm_draw_glyph(gridrect_pos_offset(r, i, 0), kit->edge_horizontal, fg, bg);
-        tm_draw_glyph(gridrect_pos_offset(r, i, r.h - 1), kit->edge_horizontal, fg, bg);
+        tm_draw_glyph(gridrect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
+        tm_draw_glyph(gridrect_offset(r, i, r.h - 1), kit->edge_horizontal, fg, bg);
     }
 
+    // Draw left and right edges
     for (int j = 1; j < r.h - 1; j++) {
-        tm_draw_glyph(gridrect_pos_offset(r, 0, j), kit->edge_vertical, fg, bg);
-        tm_draw_glyph(gridrect_pos_offset(r, r.w - 1, j), kit->edge_vertical, fg, bg);
+        tm_draw_glyph(gridrect_offset(r, 0, j), kit->edge_vertical, fg, bg);
+        tm_draw_glyph(gridrect_offset(r, r.w - 1, j), kit->edge_vertical, fg, bg);
     }
 
+    // Fill the interior
     for (int i = 1; i < r.w - 1; i++) {
         for (int j = 1; j < r.h - 1; j++) {
-            tm_draw_glyph(gridrect_pos_offset(r, i, j), kit->fill, fg, bg);
+            tm_draw_glyph(gridrect_offset(r, i, j), kit->fill, fg, bg);
         }
     }
 }
 
 
 
-// Use your helper to align text inside the rect and draw it with bg fill.
+
+//
 void tm_label(const char *label, gridrect r) {
     Font use_font = get_active_font();
     Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
     int txt_w = pixels_to_grid_x(txt_px.x);
 
-    int w;
-    if (r.w > 0) w = r.w;
-    else if (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0) w = gui_context.container_w;
-    else w = txt_w;
-
+    int w = (r.w > 0) ? r.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : txt_w);
     int h = (r.h > 0) ? r.h : 1;
 
-    // Resolve final rect position and size
     gridrect final = (r.x < 0 && r.y < 0) ? tm_next_cell(w, h) : (gridrect){ r.x, r.y, w, h };
 
-    // Get aligned text position inside final rect
-    gridpos text_pos = tm_align_text_pos(final, txt_w, 1);
+    gridrect text_cell_aligned = tm_align_text_pos(final, txt_w, 1); // This now returns a CELL gridrect
 
-    // Draw label text with background fill (from current style)
-    tm_draw_text(label, text_pos, current_style.base.foreground, current_style.base.background);
+    tm_draw_text(label, text_cell_aligned, current_theme.label.foreground, current_theme.label.background);
 }
 
+gridrect tm_panel(gridrect r) {
+    // compute final rect as usual
+    int w = (r.w > 0) ? r.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : 1);
+    int h = (r.h > 0) ? r.h : 1;
+    gridrect final;
 
+    if (r.x < 0 && r.y < 0) {
+        final = tm_next_cell(w, h);
+    } else {
+        final = (gridrect){ r.x, r.y, w, h };
+    }
 
-
-
-
-
-
-
-
-
-
+    tm_draw_panel(final);
+    return final;
+}
 
 ///////////////////////////////////////////////////
 // --- Layout ---/////////////////////////////////
@@ -346,7 +365,7 @@ Font customfont2;
 
 int main(void) {
 
-    
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     int cw = 8, ch = 8, gw = 80, gh = 47;
     InitWindow(gw * cw * 2, gh * ch * 2, "TMGUI Test");
@@ -360,73 +379,34 @@ int main(void) {
     SetTextureFilter(customfont1.texture, TEXTURE_FILTER_POINT);
     SetTextureFilter(customfont2.texture, TEXTURE_FILTER_POINT);
 
-        panel_kit test_panel_kit = {
-        .corner_tl = (atlaspos){15, 15},
-        .corner_tr = (atlaspos){15, 15},
-        .corner_bl = (atlaspos){15, 15},
-        .corner_br = (atlaspos){15, 15},
-        .edge_horizontal = (atlaspos){4, 12},
-        .edge_vertical = (atlaspos){3, 11},
-        .cap_left = (atlaspos){4, 11},
-        .cap_right = (atlaspos){3, 12},
-        .fill = (atlaspos){0, 0}
-    };
 
     tm_canvas canvas = tm_canvas_init(gw, gh, false);
 
     while (!WindowShouldClose()) {
 
         tm_canvas_begin(&canvas);
-            tm_set_style(&STYLE_TMGUI);
-            tm_set_font(&customfont0);
-            tm_set_spacing(0);
-            tm_hbox(RECT(0, 0, 80, 1));
-            tm_label("FILE",AUTO);
-            tm_label("VIEW",AUTO);
-            tm_label("TOOLS",AUTO);
-            tm_label("HELP",AUTO);
-            TEXT("Welcome to TMGUI!", 30, 1, GREEN, BLANK);
-            TEXT("Premier GUI for old-ass wretched shit", 30, 2, BLACK, GREEN);
-            tm_draw_panel(RECT(1, 2, 22, 41),&test_panel_kit, GREEN, BLACK);
+        ALIGN(CENTER,CENTER);
 
-            tm_vbox(RECT(2, 3, 20, 0));
-                tm_set_spacing(1);
-                ALIGN(LEFT,CENTER);
-                tm_label("     VBOX START     ",AUTO);
-                tm_label("OPTION1",SIZE(20, 3));
-                tm_label("OPTION2",SIZE(20, 3));
-                tm_label("OPTION3", SIZE(20, 3));
-                tm_label("OPTION4",SIZE(20, 3));
-                tm_label("       HEADER       ",AUTO);
-                tm_label("OPTION1",SIZE(20, 3));
-                tm_label("OPTION1",SIZE(20, 3));
-                tm_label("OPTION1",SIZE(20, 3));
-                tm_label("       HEADER       ",AUTO);
+        tm_vbox(RECT(0, 0, 40, 0));  // Start vertical layout at (0,0), 40 cells wide
+
+            tm_label("== Settings Menu ==", AUTO);  // Top label in VBOX
+            gridrect panel0 = tm_panel(SIZE(40, 6));  // Reserve space and draw the panel
+
+                // Children inside the panel (relative to panel position)
+                // Use CELL for single-cell positions within TEXT macro
+                TEXT("Volume",     OFFSET(panel0, 2, 1), GREEN, BLACK);
+                TEXT("[#####      ]", OFFSET(panel0, 2, 2), GREEN, BLACK);
+
+            tm_label("== Footer Info ==", AUTO);  // Another label after panel
+        ALIGN(LEFT,TOP);
+            gridrect panel1 = tm_panel(SIZE(30, 10));
+                tm_label("Inside:", OFFSET(panel1, 1, 1)); // 2 right, 1 down inside panel
+                tm_label("Option A", OFFSET(panel1, 1, 2));
+                tm_label("Option B", OFFSET(panel1, 1, 3));
+
+                tm_draw_glyph(POS(40,40), (atlaspos){3, 3}, BLUE, BLANK);
 
 
-                Color palette[] = { BLACK, GREEN };
-                #define PALETTE_SIZE (sizeof(palette)/sizeof(palette[0]))
-                tm_draw_panel(RECT(29, 9, 18, 18), &test_panel_kit, GREEN, BLACK);
-                tm_draw_panel(RECT(32, 9, 12, 1), &test_panel_kit, GREEN, BLACK);
-                TEXT("WOW GYPHS!", 33, 9, GREEN, BLACK);
-
-                // Inside your drawing code, just before EndDrawing() or similar:
-                for (int x = 0; x < 16; x++) {
-                    for (int y = 0; y < 16; y++) {
-                        Color fg = palette[rand() % PALETTE_SIZE];
-                         Color bg;
-                do {
-                     bg = palette[rand() % PALETTE_SIZE];
-                } while ((bg.r == fg.r) && (bg.g == fg.g) && (bg.b == fg.b));  // avoid same fg/bg
-
-                tm_draw_glyph((gridpos){x+30,y+10}, (atlaspos){x,y}, fg, bg);
-                    }
-                }
-
-                char fps_display[32];
-                snprintf(fps_display, sizeof(fps_display), "FPS: %d", GetFPS());
-                tm_draw_text(fps_display, (gridpos){ 70, 0 }, GREEN, BLANK);
- 
         tm_canvas_end(&canvas);
 
         BeginDrawing();
@@ -438,86 +418,3 @@ int main(void) {
     CloseWindow();
     return 0;
 }
-
-
-
-
-
-/////THE GREAT OS STYLE PURGE/////////
-///////LONG LIVE THE TERMINAL/////////
-
-/*void tm_draw_style_rect(gridrect r) {
-    tm_draw_fill_rect(r, current_style.base.background);
-    if (current_style.base.border_width > 0)
-        DrawRectangleLinesEx(gridrect_to_pixelrect(r), current_style.base.border_width, current_style.base.border);
-}*/
-
-/*void tm_label_rect_styled(const char *label, gridrect r, const tm_rect_style *style) {
-    Font use_font = get_active_font();
-    Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
-    int txt_w = pixels_to_grid_x(txt_px.x);
-
-    int padding = 0;
-    int w = (r.w > 0) ? r.w : txt_w + padding * 2;
-    int h = (r.h > 0) ? r.h : 1;
-
-    gridrect final = (r.x < 0 && r.y < 0)
-        ? tm_next_cell(w, h)
-        : (gridrect){ r.x, r.y, w, h };
-
-    // Background + border
-    tm_draw_fill_rect(final, style->background);
-    if (style->border_width > 0)
-        DrawRectangleLinesEx(gridrect_to_pixelrect(final), style->border_width, style->border);
-
-    // Aligned text
-    gridpos text_pos = tm_align_text_pos(final, txt_w, 1);
-    tm_draw_text(label, text_pos, style->foreground, BLANK);
-}*/
-
-/*void tm_label_rect(const char *label, gridrect r) {
-    tm_label_rect_styled(label, r, &current_style.base);
-}*/
-
-/*void tm_draw_bevel_rect(gridrect r) {
-    tm_bevel_style s = current_style.bevel;
-    Rectangle px = gridrect_to_pixelrect(r);
-
-    // Fill background
-    tm_draw_fill_rect(r, s.background);
-
-    // Top + left = light
-    DrawRectangle(px.x, px.y, px.width, s.border_width, s.light_edge);
-    DrawRectangle(px.x, px.y, s.border_width, px.height, s.light_edge);
-
-    // Bottom + right = dark
-    DrawRectangle(px.x, px.y + px.height - s.border_width, px.width, s.border_width, s.dark_edge);
-    DrawRectangle(px.x + px.width - s.border_width, px.y, s.border_width, px.height, s.dark_edge);
-}*/
-
-/*bool tm_button(const char *label, gridrect recti) {
-    Font font = get_active_font();
-    Vector2 txt_px = MeasureTextEx(font, label, cell_h, 0);
-    int txt_w = pixels_to_grid_x(txt_px.x);
-
-    int w = (recti.w > 0) ? recti.w : txt_w;
-    int h = (recti.h > 0) ? recti.h : 1;
-
-    gridrect final_rect = (recti.x < 0 && recti.y < 0)
-        ? tm_next_cell(w, h)
-        : (gridrect){ recti.x, recti.y, w, h };
-
-    Vector2 mouse_grid = tm_mouse_grid();
-    bool over = gridrect_contains(final_rect, (gridpos){ (int)mouse_grid.x, (int)mouse_grid.y });
-
-    bool pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-    bool clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
-
-    const tm_rect_style *style = &current_style.button.normal;
-    if (pressed) style = &current_style.button.active;
-    else if (over) style = &current_style.button.hover;
-
-    tm_label_rect_styled(label, final_rect, style);
-
-    return clicked;
-}*/
