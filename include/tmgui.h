@@ -209,8 +209,8 @@ void tm_draw_style_rect_bevel(gridrect r);
 
 // --- Elements 'tm_f' ---
 void tm_label(const char *label, gridrect r);
-void tm_label_rect_styled(const char *label, gridrect r, const tm_rect_style *style);
-void tm_label_rect(const char *label, gridrect r);
+
+
 
 bool tm_button(const char *label, gridrect recti);
 

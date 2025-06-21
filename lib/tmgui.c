@@ -214,28 +214,6 @@ inline void tm_draw_fill_cell(gridpos p, Color color) {
     DrawRectangleRec(cell, color);
 }
 
-void tm_draw_style_rect(gridrect r) {
-    tm_draw_fill_rect(r, current_style.base.background);
-    if (current_style.base.border_width > 0)
-        DrawRectangleLinesEx(gridrect_to_pixelrect(r), current_style.base.border_width, current_style.base.border);
-}
-
-void tm_draw_bevel_rect(gridrect r) {
-    tm_bevel_style s = current_style.bevel;
-    Rectangle px = gridrect_to_pixelrect(r);
-
-    // Fill background
-    tm_draw_fill_rect(r, s.background);
-
-    // Top + left = light
-    DrawRectangle(px.x, px.y, px.width, s.border_width, s.light_edge);
-    DrawRectangle(px.x, px.y, s.border_width, px.height, s.light_edge);
-
-    // Bottom + right = dark
-    DrawRectangle(px.x, px.y + px.height - s.border_width, px.width, s.border_width, s.dark_edge);
-    DrawRectangle(px.x + px.width - s.border_width, px.y, s.border_width, px.height, s.dark_edge);
-}
-
 void tm_draw_glyph(gridpos pos, atlaspos tile, Color fg, Color bg) {
     Rectangle dest = (Rectangle){ pos.x * cell_w, pos.y * cell_h, cell_w, cell_h };
     Rectangle src = (Rectangle){ tile.x * cell_w, tile.y * cell_h, cell_w, cell_h };
@@ -318,59 +296,12 @@ void tm_label(const char *label, gridrect r) {
 }
 
 
-void tm_label_rect_styled(const char *label, gridrect r, const tm_rect_style *style) {
-    Font use_font = get_active_font();
-    Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
-    int txt_w = pixels_to_grid_x(txt_px.x);
 
-    int padding = 0;
-    int w = (r.w > 0) ? r.w : txt_w + padding * 2;
-    int h = (r.h > 0) ? r.h : 1;
 
-    gridrect final = (r.x < 0 && r.y < 0)
-        ? tm_next_cell(w, h)
-        : (gridrect){ r.x, r.y, w, h };
 
-    // Background + border
-    tm_draw_fill_rect(final, style->background);
-    if (style->border_width > 0)
-        DrawRectangleLinesEx(gridrect_to_pixelrect(final), style->border_width, style->border);
 
-    // Aligned text
-    gridpos text_pos = tm_align_text_pos(final, txt_w, 1);
-    tm_draw_text(label, text_pos, style->foreground, BLANK);
-}
 
-void tm_label_rect(const char *label, gridrect r) {
-    tm_label_rect_styled(label, r, &current_style.base);
-}
 
-bool tm_button(const char *label, gridrect recti) {
-    Font font = get_active_font();
-    Vector2 txt_px = MeasureTextEx(font, label, cell_h, 0);
-    int txt_w = pixels_to_grid_x(txt_px.x);
-
-    int w = (recti.w > 0) ? recti.w : txt_w;
-    int h = (recti.h > 0) ? recti.h : 1;
-
-    gridrect final_rect = (recti.x < 0 && recti.y < 0)
-        ? tm_next_cell(w, h)
-        : (gridrect){ recti.x, recti.y, w, h };
-
-    Vector2 mouse_grid = tm_mouse_grid();
-    bool over = gridrect_contains(final_rect, (gridpos){ (int)mouse_grid.x, (int)mouse_grid.y });
-
-    bool pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-    bool clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
-
-    const tm_rect_style *style = &current_style.button.normal;
-    if (pressed) style = &current_style.button.active;
-    else if (over) style = &current_style.button.hover;
-
-    tm_label_rect_styled(label, final_rect, style);
-
-    return clicked;
-}
 
 
 
@@ -450,10 +381,10 @@ int main(void) {
             tm_set_font(&customfont0);
             tm_set_spacing(0);
             tm_hbox(RECT(0, 0, 80, 1));
-            tm_button("FILE",AUTO);
-            tm_button("VIEW",AUTO);
-            tm_button("TOOLS",AUTO);
-            tm_button("HELP",AUTO);
+            tm_label("FILE",AUTO);
+            tm_label("VIEW",AUTO);
+            tm_label("TOOLS",AUTO);
+            tm_label("HELP",AUTO);
             TEXT("Welcome to TMGUI!", 30, 1, GREEN, BLANK);
             TEXT("Premier GUI for old-ass wretched shit", 30, 2, BLACK, GREEN);
             tm_draw_panel(RECT(1, 2, 22, 41),&test_panel_kit, GREEN, BLACK);
@@ -461,18 +392,17 @@ int main(void) {
             tm_vbox(RECT(2, 3, 20, 0));
                 tm_set_spacing(1);
                 ALIGN(LEFT,CENTER);
-                tm_label_rect("     VBOX START     ",AUTO);
-                tm_button("OPTION1",SIZE(20, 3));
-                tm_button("OPTION2",SIZE(20, 3));
-                tm_button("OPTION3", SIZE(20, 3));
-                tm_button("OPTION4",SIZE(20, 3));
-                tm_label_rect("       HEADER       ",AUTO);
-                tm_button("OPTION1",SIZE(20, 3));
-                tm_button("OPTION1",SIZE(20, 3));
-                tm_button("OPTION1",SIZE(20, 3));
-                tm_label_rect("       HEADER       ",AUTO);
-                if (tm_button("EXECUTE",SIZE(20, 5))) {TraceLog(LOG_INFO, "Play button clicked!");}
-                tm_set_spacing(0);
+                tm_label("     VBOX START     ",AUTO);
+                tm_label("OPTION1",SIZE(20, 3));
+                tm_label("OPTION2",SIZE(20, 3));
+                tm_label("OPTION3", SIZE(20, 3));
+                tm_label("OPTION4",SIZE(20, 3));
+                tm_label("       HEADER       ",AUTO);
+                tm_label("OPTION1",SIZE(20, 3));
+                tm_label("OPTION1",SIZE(20, 3));
+                tm_label("OPTION1",SIZE(20, 3));
+                tm_label("       HEADER       ",AUTO);
+
 
                 Color palette[] = { BLACK, GREEN };
                 #define PALETTE_SIZE (sizeof(palette)/sizeof(palette[0]))
@@ -508,3 +438,86 @@ int main(void) {
     CloseWindow();
     return 0;
 }
+
+
+
+
+
+/////THE GREAT OS STYLE PURGE/////////
+///////LONG LIVE THE TERMINAL/////////
+
+/*void tm_draw_style_rect(gridrect r) {
+    tm_draw_fill_rect(r, current_style.base.background);
+    if (current_style.base.border_width > 0)
+        DrawRectangleLinesEx(gridrect_to_pixelrect(r), current_style.base.border_width, current_style.base.border);
+}*/
+
+/*void tm_label_rect_styled(const char *label, gridrect r, const tm_rect_style *style) {
+    Font use_font = get_active_font();
+    Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
+    int txt_w = pixels_to_grid_x(txt_px.x);
+
+    int padding = 0;
+    int w = (r.w > 0) ? r.w : txt_w + padding * 2;
+    int h = (r.h > 0) ? r.h : 1;
+
+    gridrect final = (r.x < 0 && r.y < 0)
+        ? tm_next_cell(w, h)
+        : (gridrect){ r.x, r.y, w, h };
+
+    // Background + border
+    tm_draw_fill_rect(final, style->background);
+    if (style->border_width > 0)
+        DrawRectangleLinesEx(gridrect_to_pixelrect(final), style->border_width, style->border);
+
+    // Aligned text
+    gridpos text_pos = tm_align_text_pos(final, txt_w, 1);
+    tm_draw_text(label, text_pos, style->foreground, BLANK);
+}*/
+
+/*void tm_label_rect(const char *label, gridrect r) {
+    tm_label_rect_styled(label, r, &current_style.base);
+}*/
+
+/*void tm_draw_bevel_rect(gridrect r) {
+    tm_bevel_style s = current_style.bevel;
+    Rectangle px = gridrect_to_pixelrect(r);
+
+    // Fill background
+    tm_draw_fill_rect(r, s.background);
+
+    // Top + left = light
+    DrawRectangle(px.x, px.y, px.width, s.border_width, s.light_edge);
+    DrawRectangle(px.x, px.y, s.border_width, px.height, s.light_edge);
+
+    // Bottom + right = dark
+    DrawRectangle(px.x, px.y + px.height - s.border_width, px.width, s.border_width, s.dark_edge);
+    DrawRectangle(px.x + px.width - s.border_width, px.y, s.border_width, px.height, s.dark_edge);
+}*/
+
+/*bool tm_button(const char *label, gridrect recti) {
+    Font font = get_active_font();
+    Vector2 txt_px = MeasureTextEx(font, label, cell_h, 0);
+    int txt_w = pixels_to_grid_x(txt_px.x);
+
+    int w = (recti.w > 0) ? recti.w : txt_w;
+    int h = (recti.h > 0) ? recti.h : 1;
+
+    gridrect final_rect = (recti.x < 0 && recti.y < 0)
+        ? tm_next_cell(w, h)
+        : (gridrect){ recti.x, recti.y, w, h };
+
+    Vector2 mouse_grid = tm_mouse_grid();
+    bool over = gridrect_contains(final_rect, (gridpos){ (int)mouse_grid.x, (int)mouse_grid.y });
+
+    bool pressed = over && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    bool clicked = over && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+
+    const tm_rect_style *style = &current_style.button.normal;
+    if (pressed) style = &current_style.button.active;
+    else if (over) style = &current_style.button.hover;
+
+    tm_label_rect_styled(label, final_rect, style);
+
+    return clicked;
+}*/
