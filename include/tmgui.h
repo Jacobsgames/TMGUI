@@ -45,7 +45,7 @@ extern layout_context gui_context;
 // (e.g., RELRECT(panel_area, 1, 1, 8, 3) for 8x3 rect at 1,1 offset from panel)
 #define RELRECT(parent_r, dx, dy, width, height) \
     ((gridrect){ (parent_r).x + (dx), (parent_r).y + (dy), (width), (height) })
-    
+
 // RELPOS: Position an element relative to a parent gridrect, with auto-sizing.
 // (e.g., RELPOS(panel_area, 1, 1) for auto-sized element at 1,1 offset from panel)
 // The width/height will be determined by the widget's internal logic (e.g., text length for tm_text/label).
@@ -167,6 +167,7 @@ gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text
 void tm_text(const char *text, gridrect cell);
 void tm_label(const char *text, gridrect area);
 gridrect tm_panel(gridrect area);
+gridrect tm_panel_titled (const char *text, gridrect area, int pad);
 
 // --- Mouse Input / Transform ---
 void tm_update_transform(int scale, int offX, int offY);

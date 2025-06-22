@@ -45,8 +45,6 @@ static inline Rectangle gridrect_to_pixelrect(gridrect area) { // Converts a gri
     };
 }
 
-
-
 static inline gridrect gridrect_offset(gridrect area, int x_off, int y_off) { //returns a copy of a grid rect, offset by input
     return (gridrect){ area.x + x_off, area.y + y_off, area.w, area.h };
 }
@@ -368,6 +366,32 @@ gridrect tm_panel(gridrect area) {
     return final;
 }
 
+
+gridrect tm_panel_titled (const char *text, gridrect area, int pad) {
+
+    gridrect final_area = tm_panel(area); //  get final_area from tm_panel call
+
+    int padding = pad; // Define your padding value once
+
+    gridrect title_area = { // Set title area as 1 high strip, panel wide, along the top edge
+        .x = final_area.x + padding, // Start X position after left padding
+        .y = final_area.y,
+        .w = final_area.w - (2 * padding), // Reduce width for both left and right padding
+        .h = 1
+    };
+
+    tm_text(text, title_area); //  draw the text.
+
+    gridrect content_area = { // Calculate content_area relative to final_area.
+        .x = final_area.x,
+        .y = final_area.y + 1, // 1 cell below the title strip
+        .w = final_area.w,
+        .h = final_area.h - 1  // Remaining height
+    };
+    
+    return content_area; //  Return the content_area, the area children will follow (title h subtracted)
+}
+
 ///////////////////////////////////////////////////
 // --- Layout ---/////////////////////////////////
 gridrect tm_next_cell(int w, int h) {
@@ -405,6 +429,8 @@ Font customfont0;
 Font customfont1;
 Font customfont2;
 
+
+
 int main(void) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     int cw = 8, ch = 8, gw = 80, gh = 47; // Full 80x47 grid screen
@@ -441,27 +467,37 @@ int main(void) {
 // --- Panel Frame A and B (Visual boundaries for Vbox A & B) ---
 tm_panel(RECT(0,0,13,45)); // list frame A
 tm_panel(RECT(12,0,13,45)); // list frame B
+ALIGN(LEFT,TOP);
+gridrect log = tm_panel_titled("TITLE TITLE",RECT(24,32,56,16),3); // LOG frame
+tm_vbox(RECT(24,32,56,16));
+tm_label(">you ate the poopo bug",RELRECT(log,1,0,log.w-2,0));
+tm_text(">you ate the poopo bug",OFFSET(log,1,1)); 
+tm_text(">you ate the poopo bug",OFFSET(log,1,2)); 
+tm_text(">you feel sick",OFFSET(log,1,3)); 
+tm_text(">you pump the faucet",OFFSET(log,1,4)); 
+tm_text(">you Charm the dingo",OFFSET(log,1,5));  
+
 
 // --- VBOX A: List of Labels and Text (your original example) ---
 tm_vbox(RECT(1,1,11,45)); // This sets gui_context for elements in this Vbox
     
     ALIGN(LEFT,CENTER);
-    tm_text("TEXT1",SIZE(11,1));
+    tm_text("ACTIONS",SIZE(11,1));
 
     ALIGN(CENTER,CENTER);
-    tm_label("LABEL A",SIZE(11,3));
-    tm_label("LABEL B",SIZE(11,3));
-    tm_label("LABEL C",SIZE(11,3));
-    tm_label("LABEL D",SIZE(11,3));
+    tm_label("ABILITY",SIZE(11,3));
+    tm_label("USE",SIZE(11,3));
+    tm_label("TALK",SIZE(11,3));
+    tm_label("FLIRT",SIZE(11,3));
 
     ALIGN(LEFT,CENTER);
-    tm_text("TEXT2",SIZE(11,1));
+    tm_text("ITEMS",SIZE(11,1));
 
     ALIGN(CENTER,CENTER);
-    tm_label("LABEL E",SIZE(11,3));
-    tm_label("LABEL F",SIZE(11,3));
-    tm_label("LABEL G",SIZE(11,3));
-    tm_label("LABEL H",SIZE(11,3));
+    tm_label("BENT STRAW",SIZE(11,3));
+    tm_label("DOG FUR",SIZE(11,3));
+    tm_label("MANS HAT",SIZE(11,3));
+    tm_label("STRAW",SIZE(11,3));
 
 // --- VBOX B: Panels with children (your expanded weirdos list) ---
 // This call *overwrites* gui_context, ending Vbox A's context and starting Vbox B's
@@ -483,15 +519,6 @@ tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
     tm_text("PWR: 3",OFFSET(p1,1,1));
     tm_text("SKI: 4",OFFSET(p1,1,2));
     tm_text(">Drain Life",OFFSET(p1,1,3));
-
-
-    // Character 3: Glork
-    gridrect p2 = tm_panel(SIZE(14,5)); // Panel 2: Auto-positioned within Vbox B
-    tm_label("Glork",RELRECT(p2,0,0,8,1));
-    tm_text("PWR: 8",OFFSET(p2,1,1));
-    tm_text("SKI: 1",OFFSET(p2,1,2));
-    tm_text(">Smash",OFFSET(p2,1,3));
-
 
     // Character 4: Zarthus
     gridrect p3 = tm_panel(SIZE(14,5)); // Panel 3: Auto-positioned within Vbox B
