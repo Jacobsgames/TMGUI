@@ -164,8 +164,8 @@ gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text
 
 
 // --- Elements 'tm_f' ---
-void tm_text(const char *text, gridrect cell);
-void tm_label(const char *text, gridrect area);
+gridrect tm_text(const char *text, gridrect cell);
+gridrect tm_label(const char *text, gridrect area);
 gridrect tm_panel(gridrect area);
 gridrect tm_panel_titled (const char *text, gridrect area, int pad);
 

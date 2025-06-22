@@ -319,19 +319,21 @@ void tm_draw_panel(gridrect r) {
 
 
 //
-void tm_text(const char *text, gridrect area) {
+gridrect tm_text(const char *text, gridrect area) {
     gridrect txtpos;
     (void)get_area_and_txtpos(text, area, &txtpos);
     tm_draw_text(text, txtpos, current_theme.text.foreground, current_theme.text.background);
+    return txtpos;
 }
 
-void tm_label(const char *text, gridrect area) {
+gridrect tm_label(const char *text, gridrect area) {
     gridrect txtpos;
     // HERE: final_label_area receives the returned value from the helper
     gridrect final_label_area = get_area_and_txtpos(text, area, &txtpos);
     // AND HERE: final_label_area is USED to draw the full background
     tm_draw_fill_rect(final_label_area, current_theme.label.background);
     tm_draw_text(text, txtpos, current_theme.label.foreground, current_theme.label.background);
+    return txtpos;
 }
 
 
@@ -367,6 +369,7 @@ gridrect tm_panel(gridrect area) {
 }
 
 
+
 gridrect tm_panel_titled (const char *text, gridrect area, int pad) {
 
     gridrect final_area = tm_panel(area); //  get final_area from tm_panel call
@@ -376,11 +379,38 @@ gridrect tm_panel_titled (const char *text, gridrect area, int pad) {
     gridrect title_area = { // Set title area as 1 high strip, panel wide, along the top edge
         .x = final_area.x + padding, // Start X position after left padding
         .y = final_area.y,
-        .w = final_area.w - (2 * padding), // Reduce width for both left and right padding
+        .w = final_area.w,     //- (2 * padding), // Reduce width for both left and right padding
         .h = 1
     };
 
-    tm_text(text, title_area); //  draw the text.
+    gridrect textpos = tm_text(text, title_area); //  draw the text.
+
+    gridrect lcap_cell = { 
+        .x = (textpos.x-1), 
+        .y = (textpos.y),
+        .w = 1,    
+        .h = 1
+    };
+
+    gridrect rcap_cell = { 
+        .x = (textpos.x + strlen(text)), 
+        .y = (textpos.y),
+        .w = 1,    
+        .h = 1
+    };
+
+    
+    if ( (pad >= 1 && h_align == ALIGN_LEFT) || (h_align == ALIGN_CENTER) ) {
+        tm_draw_glyph(lcap_cell,(atlaspos){4, 11},current_theme.panel.foreground, current_theme.panel.background); 
+    }
+
+    if ( (pad >= 1 && h_align == ALIGN_RIGHT) || (h_align == ALIGN_CENTER) ) {
+        tm_draw_glyph(rcap_cell,(atlaspos){3, 12},current_theme.panel.foreground, current_theme.panel.background); 
+    }
+
+    
+
+    tm_draw_glyph(rcap_cell,(atlaspos){3, 12},current_theme.panel.foreground, current_theme.panel.background);
 
     gridrect content_area = { // Calculate content_area relative to final_area.
         .x = final_area.x,
@@ -391,6 +421,12 @@ gridrect tm_panel_titled (const char *text, gridrect area, int pad) {
     
     return content_area; //  Return the content_area, the area children will follow (title h subtracted)
 }
+
+
+
+
+
+
 
 ///////////////////////////////////////////////////
 // --- Layout ---/////////////////////////////////
@@ -468,7 +504,8 @@ int main(void) {
 tm_panel(RECT(0,0,13,45)); // list frame A
 tm_panel(RECT(12,0,13,45)); // list frame B
 ALIGN(LEFT,TOP);
-gridrect log = tm_panel_titled("TITLE TITLE",RECT(24,32,56,16),3); // LOG frame
+gridrect log = tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
+ALIGN(RIGHT,TOP);
 tm_vbox(RECT(24,32,56,16));
 tm_label(">you ate the poopo bug",RELRECT(log,1,0,log.w-2,0));
 tm_text(">you ate the poopo bug",OFFSET(log,1,1)); 
