@@ -318,12 +318,12 @@ void tm_draw_panel(gridrect r) {
 
 
 
-//
+
 gridrect tm_text(const char *text, gridrect area) {
     gridrect txtpos;
-    (void)get_area_and_txtpos(text, area, &txtpos);
+    gridrect final_area = get_area_and_txtpos(text, area, &txtpos);
     tm_draw_text(text, txtpos, current_theme.text.foreground, current_theme.text.background);
-    return txtpos;
+    return final_area;
 }
 
 gridrect tm_label(const char *text, gridrect area) {
@@ -494,7 +494,7 @@ int main(void) {
     ClearBackground(BLACK); // A darker background to highlight UI elements
 
 
-    tm_set_spacing(1);
+    tm_set_spacing(0);
     ALIGN(LEFT, TOP);
 // --- Inside your main game loop, within tm_canvas_begin(&canvas) and tm_canvas_end(&canvas) ---
 
@@ -504,15 +504,13 @@ int main(void) {
 tm_panel(RECT(0,0,13,45)); // list frame A
 tm_panel(RECT(12,0,13,45)); // list frame B
 ALIGN(LEFT,TOP);
-gridrect log = tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
+tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
 ALIGN(RIGHT,TOP);
-tm_vbox(RECT(24,32,56,16));
-tm_label(">you ate the poopo bug",RELRECT(log,1,0,log.w-2,0));
-tm_text(">you ate the poopo bug",OFFSET(log,1,1)); 
-tm_text(">you ate the poopo bug",OFFSET(log,1,2)); 
-tm_text(">you feel sick",OFFSET(log,1,3)); 
-tm_text(">you pump the faucet",OFFSET(log,1,4)); 
-tm_text(">you Charm the dingo",OFFSET(log,1,5));  
+tm_vbox(RECT(25,33,54,16));
+tm_text(">you ate the poopo bug", AUTO);
+tm_text(">you ate the poopo bug", AUTO);
+tm_text(">you ate the poopo bug", AUTO);
+tm_text(">you ate the poopo bug", AUTO);
 
 
 // --- VBOX A: List of Labels and Text (your original example) ---
