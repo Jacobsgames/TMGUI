@@ -40,7 +40,19 @@ extern layout_context gui_context;
 #define POS(x,y) ((gridrect){ x, y, 0, 0 })
 
 #define RECT(x,y,w,h) ((gridrect){ x, y, w, h })
-// #define GPOS(x, y) ((gridpos){ (x), (y) }) // REMOVED - no more gridpos
+
+// RELRECT: Explicitly position and size an element relative to a parent gridrect.
+// (e.g., RELRECT(panel_area, 1, 1, 8, 3) for 8x3 rect at 1,1 offset from panel)
+#define RELRECT(parent_r, dx, dy, width, height) \
+    ((gridrect){ (parent_r).x + (dx), (parent_r).y + (dy), (width), (height) })
+    
+// RELPOS: Position an element relative to a parent gridrect, with auto-sizing.
+// (e.g., RELPOS(panel_area, 1, 1) for auto-sized element at 1,1 offset from panel)
+// The width/height will be determined by the widget's internal logic (e.g., text length for tm_text/label).
+#define RELPOS(parent_r, dx, dy) \
+    ((gridrect){ (parent_r).x + (dx), (parent_r).y + (dy), 0, 0 }) // w=0, h=0 signals auto-size
+
+
 #define CELL(x, y)             ((gridrect){ (x), (y), 1, 1 })    // formerly gridpos
 #define OFFSET(r, dx, dy)      ((gridrect){ (r).x + (dx), (r).y + (dy), (r).w, (r).h }) // formerly RRECT or RPOS
 

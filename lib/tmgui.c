@@ -433,28 +433,92 @@ int main(void) {
 
 
     tm_set_spacing(1);
+    ALIGN(LEFT, TOP);
+// --- Inside your main game loop, within tm_canvas_begin(&canvas) and tm_canvas_end(&canvas) ---
 
-        tm_panel(RECT(0,0,13,45));
+// Assuming tm_set_spacing(1); and ALIGN(LEFT, TOP); are set at the start of your main loop iteration
 
-            tm_vbox(RECT(1,1,11,45)); 
+// --- Panel Frame A and B (Visual boundaries for Vbox A & B) ---
+tm_panel(RECT(0,0,13,45)); // list frame A
+tm_panel(RECT(12,0,13,45)); // list frame B
 
-                    ALIGN(LEFT,CENTER);
-                tm_text("TEXT1",SIZE(11,1));
+// --- VBOX A: List of Labels and Text (your original example) ---
+tm_vbox(RECT(1,1,11,45)); // This sets gui_context for elements in this Vbox
+    
+    ALIGN(LEFT,CENTER);
+    tm_text("TEXT1",SIZE(11,1));
 
-                    ALIGN(CENTER,CENTER);
-                tm_label("LABEL",SIZE(11,3));
-                tm_label("LABEL",SIZE(11,3));
-                tm_label("LABEL",SIZE(11,3));
-                tm_label("LABEL",SIZE(11,3));
+    ALIGN(CENTER,CENTER);
+    tm_label("LABEL A",SIZE(11,3));
+    tm_label("LABEL B",SIZE(11,3));
+    tm_label("LABEL C",SIZE(11,3));
+    tm_label("LABEL D",SIZE(11,3));
 
-                    ALIGN(LEFT,CENTER);
-                tm_text("TEXT",SIZE(11,1));
+    ALIGN(LEFT,CENTER);
+    tm_text("TEXT2",SIZE(11,1));
 
-                    ALIGN(CENTER,CENTER);
-                tm_label("LABEL",SIZE(11,3));
-                tm_label("LABEL",SIZE(11,3));
-                tm_label("LABEL",SIZE(11,3));
-                tm_label("LABEL",SIZE(11,3));
+    ALIGN(CENTER,CENTER);
+    tm_label("LABEL E",SIZE(11,3));
+    tm_label("LABEL F",SIZE(11,3));
+    tm_label("LABEL G",SIZE(11,3));
+    tm_label("LABEL H",SIZE(11,3));
+
+// --- VBOX B: Panels with children (your expanded weirdos list) ---
+// This call *overwrites* gui_context, ending Vbox A's context and starting Vbox B's
+tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
+    
+    ALIGN(LEFT,TOP); // Alignment for elements *within* Vbox B
+
+    // Character 1: Gorgon
+    gridrect p0 = tm_panel(SIZE(14,5)); // Panel 0: Auto-positioned within Vbox B, full width of 14, height 5
+    tm_label("Gorgon",RELRECT(p0,0,0,8,1)); // Name label, explicit 8x1 size at 0,0 offset
+    tm_text("PWR: 6",OFFSET(p0,1,1)); // Power text, auto-sized, at 1,1 offset
+    tm_text("SKI: 3",OFFSET(p0,1,2)); // Skill text, auto-sized, at 1,2 offset
+    tm_text(">GobSmack",OFFSET(p0,1,3)); // Ability text, auto-sized, at 1,3 offset
+
+
+    // Character 2: Velbort
+    gridrect p1 = tm_panel(SIZE(14,5)); // Panel 1: Auto-positioned within Vbox B
+    tm_label("Velbort",RELRECT(p1,0,0,8,1));
+    tm_text("PWR: 3",OFFSET(p1,1,1));
+    tm_text("SKI: 4",OFFSET(p1,1,2));
+    tm_text(">Drain Life",OFFSET(p1,1,3));
+
+
+    // Character 3: Glork
+    gridrect p2 = tm_panel(SIZE(14,5)); // Panel 2: Auto-positioned within Vbox B
+    tm_label("Glork",RELRECT(p2,0,0,8,1));
+    tm_text("PWR: 8",OFFSET(p2,1,1));
+    tm_text("SKI: 1",OFFSET(p2,1,2));
+    tm_text(">Smash",OFFSET(p2,1,3));
+
+
+    // Character 4: Zarthus
+    gridrect p3 = tm_panel(SIZE(14,5)); // Panel 3: Auto-positioned within Vbox B
+    tm_label("Zarthus",RELRECT(p3,0,0,8,1));
+    tm_text("PWR: 5",OFFSET(p3,1,1));
+    tm_text("SKI: 7",OFFSET(p3,1,2));
+    tm_text(">Teleport",OFFSET(p3,1,3));
+
+
+    // Character 5: Flink
+    gridrect p4 = tm_panel(SIZE(14,5)); // Panel 4: Auto-positioned within Vbox B
+    tm_label("Flink",RELRECT(p4,0,0,8,1));
+    tm_text("PWR: 2",OFFSET(p4,1,1));
+    tm_text("SKI: 9",OFFSET(p4,1,2));
+    tm_text(">Charm",OFFSET(p4,1,3));
+
+
+    // Character 6: Xylo
+    gridrect p5 = tm_panel(SIZE(14,5)); // Panel 5: Auto-positioned within Vbox B
+    tm_label("Xylo",RELRECT(p5,0,0,8,1));
+    tm_text("PWR: 7",OFFSET(p5,1,1));
+    tm_text("SKI: 5",OFFSET(p5,1,2));
+    tm_text(">Sonic Burst",OFFSET(p5,1,3));
+    // No spacing after the last panel in the list
+
+// (Rest of your main loop code, tm_canvas_end, BeginDrawing/EndDrawing, etc.)
+
 
     tm_canvas_end(&canvas);
 
