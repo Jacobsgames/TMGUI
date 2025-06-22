@@ -36,19 +36,19 @@ Vector2 tm_mouse_grid(void) {
 
 // --- GRIDTOOLS ---
 
-static inline Rectangle gridrect_to_pixelrect(gridrect r) { // Converts a gridrect to a pixel-space Rectangle
+static inline Rectangle gridrect_to_pixelrect(gridrect area) { // Converts a gridrect to a pixel-space Rectangle
     return (Rectangle){
-        r.x * cell_w,
-        r.y * cell_h,
-        r.w * cell_w,
-        r.h * cell_h
+        area.x * cell_w,
+        area.y * cell_h,
+        area.w * cell_w,
+        area.h * cell_h
     };
 }
 
 
 
-static inline gridrect gridrect_offset(gridrect r, int x_off, int y_off) { //returns a copy of a grid rect, offset by input
-    return (gridrect){ r.x + x_off, r.y + y_off, r.w, r.h };
+static inline gridrect gridrect_offset(gridrect area, int x_off, int y_off) { //returns a copy of a grid rect, offset by input
+    return (gridrect){ area.x + x_off, area.y + y_off, area.w, area.h };
 }
 
 // Relative offset of a CELL from a parent rect
@@ -56,8 +56,8 @@ static inline gridrect offset_cell(gridrect parent, int dx, int dy) {
     return CELL(parent.x + dx, parent.y + dy);
 }
 
-static inline bool gridrect_valid(gridrect r) { //checks if a gridrect has valid size (eg above 0 x,y)
-    return (r.w > 0 && r.h > 0);
+static inline bool gridrect_valid(gridrect area) { //checks if a gridrect has valid size (eg above 0 x,y)
+    return (area.w > 0 && area.h > 0);
 }
 
 
@@ -76,15 +76,42 @@ static inline bool cell_equal(gridrect a, gridrect b) {
 }
 
 // Check if a CELL (gridrect with w=1,h=1) is inside a bigger gridrect
-static inline bool rect_contains_cell(gridrect r, gridrect cell) {
-    return (cell.x >= r.x && cell.x < r.x + r.w &&
-            cell.y >= r.y && cell.y < r.y + r.h &&
+static inline bool rect_contains_cell(gridrect area, gridrect cell) {
+    return (cell.x >= area.x && cell.x < area.x + area.w &&
+            cell.y >= area.y && cell.y < area.y + area.h &&
             cell.w == 1 && cell.h == 1);
 }
 
 // Get center CELL of a rect
-static inline gridrect rect_center_cell(gridrect r) {
-    return CELL(r.x + r.w / 2, r.y + r.h / 2);
+static inline gridrect rect_center_cell(gridrect area) {
+    return CELL(area.x + area.w / 2, area.y + area.h / 2);
+}
+
+static gridrect get_area_and_txtpos(const char *text, gridrect area, gridrect *out_txtpos) {
+    // Calculate text width in grid cells (optimized for monospaced fonts)
+    int txt_w = strlen(text);
+
+    // Determine widget's actual width (w):
+    // 1. Use explicit width if provided (r.w > 0)
+    // 2. Else, stretch to container width if in VBOX layout and container_w > 0
+    // 3. Else, use text's natural width
+    int w = (area.w > 0) ? area.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : txt_w);
+
+    // Determine widget's actual height (h):
+    // 1. Use explicit height if provided (r.h > 0)
+    // 2. Else, default to 1 grid cell high for text
+    int h = (area.h > 0) ? area.h : 1;
+
+    // Determine widget's final position and size (final):
+    // 1. If auto-positioning requested (r.x/y < 0), get next available cell from layout system
+    // 2. Else, use explicit position from r combined with calculated w, h
+    gridrect final = (area.x < 0 && area.y < 0) ? tm_next_cell(w, h) : (gridrect){ area.x, area.y, w, h };
+
+    // Calculate and store the aligned starting grid cell for the text within 'final' rect
+    *out_txtpos = tm_align_text_pos(final, txt_w, 1);
+
+    // Return the calculated overall bounding rectangle for the widget
+    return final;
 }
 
 
@@ -205,8 +232,8 @@ static Font get_active_font(void) {
 ///////////////////////////////////////////////////////////////////
 // --- Primitives ---//////////////////////////////////////////////
 
-inline void tm_draw_fill_rect(gridrect r, Color color) {
-    Rectangle px = gridrect_to_pixelrect(r);
+inline void tm_draw_fill_rect(gridrect area, Color color) {
+    Rectangle px = gridrect_to_pixelrect(area);
     DrawRectangle(px.x, px.y, px.width, px.height, color);
 }
 
@@ -293,9 +320,24 @@ void tm_draw_panel(gridrect r) {
 
 
 
-
 //
-void tm_label(const char *label, gridrect r) {
+void tm_text(const char *text, gridrect area) {
+    gridrect txtpos;
+    (void)get_area_and_txtpos(text, area, &txtpos);
+    tm_draw_text(text, txtpos, current_theme.text.foreground, current_theme.text.background);
+}
+
+void tm_label(const char *text, gridrect area) {
+    gridrect txtpos;
+    // HERE: final_label_area receives the returned value from the helper
+    gridrect final_label_area = get_area_and_txtpos(text, area, &txtpos);
+    // AND HERE: final_label_area is USED to draw the full background
+    tm_draw_fill_rect(final_label_area, current_theme.label.background);
+    tm_draw_text(text, txtpos, current_theme.label.foreground, current_theme.label.background);
+}
+
+
+/*bool tm_button(const char *label, gridrect r) {
     Font use_font = get_active_font();
     Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
     int txt_w = pixels_to_grid_x(txt_px.x);
@@ -308,18 +350,18 @@ void tm_label(const char *label, gridrect r) {
     gridrect text_cell_aligned = tm_align_text_pos(final, txt_w, 1); // This now returns a CELL gridrect
 
     tm_draw_text(label, text_cell_aligned, current_theme.label.foreground, current_theme.label.background);
-}
+}*/
 
-gridrect tm_panel(gridrect r) {
+gridrect tm_panel(gridrect area) {
     // compute final rect as usual
-    int w = (r.w > 0) ? r.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : 1);
-    int h = (r.h > 0) ? r.h : 1;
+    int w = (area.w > 0) ? area.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : 1);
+    int h = (area.h > 0) ? area.h : 1;
     gridrect final;
 
-    if (r.x < 0 && r.y < 0) {
+    if (area.x < 0 && area.y < 0) {
         final = tm_next_cell(w, h);
     } else {
-        final = (gridrect){ r.x, r.y, w, h };
+        final = (gridrect){ area.x, area.y, w, h };
     }
 
     tm_draw_panel(final);
@@ -338,18 +380,18 @@ gridrect tm_next_cell(int w, int h) {
     return (gridrect){ x, y, w, h };
 }
 
-void tm_vbox(gridrect r) {
+void tm_vbox(gridrect area) {
     gui_context.mode = LAYOUT_VBOX;
-    gui_context.cursor_x = (r.x < 0 ? 0 : r.x);
-    gui_context.cursor_y = (r.y < 0 ? 0 : r.y);
-    gui_context.container_w = r.w; // ← Set container width
+    gui_context.cursor_x = (area.x < 0 ? 0 : area.x);
+    gui_context.cursor_y = (area.y < 0 ? 0 : area.y);
+    gui_context.container_w = area.w; // ← Set container width
 }
 
-void tm_hbox(gridrect r) {
+void tm_hbox(gridrect area) {
     gui_context.mode = LAYOUT_HBOX;
-    gui_context.cursor_x = (r.x < 0 ? 0 : r.x);
-    gui_context.cursor_y = (r.y < 0 ? 0 : r.y);
-    gui_context.container_h = r.h; // ← Set container width
+    gui_context.cursor_x = (area.x < 0 ? 0 : area.x);
+    gui_context.cursor_y = (area.y < 0 ? 0 : area.y);
+    gui_context.container_h = area.h; // ← Set container width
 }
 
 
@@ -357,21 +399,20 @@ void tm_hbox(gridrect r) {
 // --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
 // --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
 // --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
+
+// Test font declarations (as per your request)
 Font customfont0;
 Font customfont1;
 Font customfont2;
 
-
-
 int main(void) {
-
-
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    int cw = 8, ch = 8, gw = 80, gh = 47;
-    InitWindow(gw * cw * 2, gh * ch * 2, "TMGUI Test");
+    int cw = 8, ch = 8, gw = 80, gh = 47; // Full 80x47 grid screen
+    InitWindow(gw * cw * 2, gh * ch * 2, "TMGUI Dungeon HUD (Revised)");
     tmgui_init(cw, ch);
     SetTargetFPS(60);
 
+    // Load custom fonts (as per your request)
     customfont0 = LoadFontEx("C:/Code/tmgui/fonts/URSA.ttf", cell_h, NULL, 0);
     customfont1 = LoadFontEx("C:/Code/tmgui/fonts/DUNGEONMODE.ttf", cell_h, NULL, 0);
     customfont2 = LoadFontEx("C:/Code/tmgui/fonts/KITCHENSINK.ttf", cell_h, NULL, 0);
@@ -379,42 +420,54 @@ int main(void) {
     SetTextureFilter(customfont1.texture, TEXTURE_FILTER_POINT);
     SetTextureFilter(customfont2.texture, TEXTURE_FILTER_POINT);
 
-
     tm_canvas canvas = tm_canvas_init(gw, gh, false);
 
+    // Set a custom theme for the main UI
+    tm_set_theme(&THEME_GREEN);
+    tm_set_font(&customfont0); // Use customfont0 as the primary UI font
+
+
     while (!WindowShouldClose()) {
-
-        tm_canvas_begin(&canvas);
-        ALIGN(CENTER,CENTER);
-
-        tm_vbox(RECT(0, 0, 40, 0));  // Start vertical layout at (0,0), 40 cells wide
-
-            tm_label("== Settings Menu ==", AUTO);  // Top label in VBOX
-            gridrect panel0 = tm_panel(SIZE(40, 6));  // Reserve space and draw the panel
-
-                // Children inside the panel (relative to panel position)
-                // Use CELL for single-cell positions within TEXT macro
-                TEXT("Volume",     OFFSET(panel0, 2, 1), GREEN, BLACK);
-                TEXT("[#####      ]", OFFSET(panel0, 2, 2), GREEN, BLACK);
-
-            tm_label("== Footer Info ==", AUTO);  // Another label after panel
-        ALIGN(LEFT,TOP);
-            gridrect panel1 = tm_panel(SIZE(30, 10));
-                tm_label("Inside:", OFFSET(panel1, 1, 1)); // 2 right, 1 down inside panel
-                tm_label("Option A", OFFSET(panel1, 1, 2));
-                tm_label("Option B", OFFSET(panel1, 1, 3));
-
-                tm_draw_glyph(POS(40,40), (atlaspos){3, 3}, BLUE, BLANK);
+    tm_canvas_begin(&canvas);
+    ClearBackground(BLACK); // A darker background to highlight UI elements
 
 
-        tm_canvas_end(&canvas);
+    tm_set_spacing(1);
+
+        tm_panel(RECT(0,0,13,45));
+
+            tm_vbox(RECT(1,1,11,45)); 
+
+                    ALIGN(LEFT,CENTER);
+                tm_text("TEXT1",SIZE(11,1));
+
+                    ALIGN(CENTER,CENTER);
+                tm_label("LABEL",SIZE(11,3));
+                tm_label("LABEL",SIZE(11,3));
+                tm_label("LABEL",SIZE(11,3));
+                tm_label("LABEL",SIZE(11,3));
+
+                    ALIGN(LEFT,CENTER);
+                tm_text("TEXT",SIZE(11,1));
+
+                    ALIGN(CENTER,CENTER);
+                tm_label("LABEL",SIZE(11,3));
+                tm_label("LABEL",SIZE(11,3));
+                tm_label("LABEL",SIZE(11,3));
+                tm_label("LABEL",SIZE(11,3));
+
+    tm_canvas_end(&canvas);
 
         BeginDrawing();
-        ClearBackground(BLUE);
+        ClearBackground(BLACK); // Clear the actual window with black
         EndDrawing();
     }
 
-    tmgui_shutdown();
+    // Unload fonts
+    UnloadFont(customfont0);
+    UnloadFont(customfont1);
+    UnloadFont(customfont2);
+    tmgui_shutdown(); // Unloads current_font and glyph_atlas
     CloseWindow();
     return 0;
 }

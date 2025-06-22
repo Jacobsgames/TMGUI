@@ -53,8 +53,8 @@ extern layout_context gui_context;
 #define ALIGNH(h)          tm_align_horizontal(ALIGN_##h)
 #define ALIGNV(v)          tm_align_vertical(ALIGN_##v)
 
-#define VSPACE(h) tm_label("", SIZE(-1, h)) // vertical spacing in VBOX
-#define HSPACE(w) tm_label("", SIZE(w, -1)) // horizontal spacing in HBOX
+#define VSPACE(h) tm_text("", SIZE(-1, h)) // vertical spacing in VBOX
+#define HSPACE(w) tm_text("", SIZE(w, -1)) // horizontal spacing in HBOX
 
 // --- Tile Atlas ---
 typedef struct { int x, y; } atlaspos;
@@ -127,8 +127,8 @@ static const tm_theme THEME_GREEN = {
 };
 
 // --- Core Layout API ---
-void tm_vbox(gridrect r);
-void tm_hbox(gridrect r);
+void tm_vbox(gridrect area);
+void tm_hbox(gridrect area);
 gridrect tm_next_cell(int w, int h);
 
 // --- System Init ---
@@ -142,7 +142,7 @@ void tm_set_spacing(int spacing);
 
 // --- Primitives 'tm_draw' ---
 void tm_draw_fill_cell(gridrect cell, Color color);
-void tm_draw_fill_rect(gridrect r, Color color);
+void tm_draw_fill_rect(gridrect area, Color color);
 void tm_draw_glyph(gridrect cell, atlaspos tile, Color fg, Color bg);
 void tm_draw_panel(gridrect r);
 void tm_draw_text(const char *text, gridrect cell, Color fg, Color bg);
@@ -152,8 +152,9 @@ gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text
 
 
 // --- Elements 'tm_f' ---
-void tm_label(const char *label, gridrect r);
-gridrect tm_panel(gridrect r);
+void tm_text(const char *text, gridrect cell);
+void tm_label(const char *text, gridrect area);
+gridrect tm_panel(gridrect area);
 
 // --- Mouse Input / Transform ---
 void tm_update_transform(int scale, int offX, int offY);
