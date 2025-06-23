@@ -490,12 +490,13 @@ void tm_hbox(grect area) {
 }
 
 
-void tilepicker_tool(void) {
+void glyph_tool(void) {
     int cols = glyph_atlas.width / cell_w, rows = glyph_atlas.height / cell_h;
     int ox = 65, oy = 64, tw = cell_w * 4, th = cell_h * 4;
     Vector2 m = GetMousePosition();
     int tx = (m.x - ox) / tw, ty = (m.y - oy) / th;
-
+    
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
     DrawRectangle(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, BLACK);
     DrawRectangleLines(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, GREEN);
     DrawTextEx(fallback_font, "GLYPH TOOL", (Vector2){ ox-32, oy - th *2  }, th, 0, GREEN);
@@ -737,8 +738,8 @@ tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
         ClearBackground(BLACK); // Clear the actual window with black
 
 if (show_tilepicker) {
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
-    tilepicker_tool();      // Then draw your tilepicker
+    
+    glyph_tool();      // Then draw your tilepicker
 }
 
         EndDrawing();

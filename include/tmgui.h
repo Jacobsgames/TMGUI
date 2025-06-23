@@ -180,6 +180,6 @@ tm_canvas tm_canvas_init(int grid_w, int grid_h, bool transparent);
 void tm_canvas_begin(tm_canvas *c);
 void tm_canvas_end(tm_canvas *c);
 
-void tilepicker_tool(void);
+void glyph_tool(void);
 
 #endif // TMGUI_H
