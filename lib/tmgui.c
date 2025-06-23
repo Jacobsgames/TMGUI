@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
+
+
 static int cell_w, cell_h;
 
 static tm_theme current_theme;
@@ -20,6 +23,9 @@ static int layout_padding = 0;
 static align_mode h_align = ALIGN_LEFT;
 static align_mode v_align = ALIGN_TOP;
 
+
+
+static bool show_tilepicker = false;
 
 // --- Transform ---
 void tm_update_transform(int scale, int pos_x, int pos_y) {
@@ -484,10 +490,137 @@ void tm_hbox(grect area) {
 }
 
 
+void tilepicker_tool(void) {
+    int cols = glyph_atlas.width / cell_w, rows = glyph_atlas.height / cell_h;
+    int ox = 65, oy = 64, tw = cell_w * 4, th = cell_h * 4;
+    Vector2 m = GetMousePosition();
+    int tx = (m.x - ox) / tw, ty = (m.y - oy) / th;
+
+    DrawRectangle(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, BLACK);
+    DrawRectangleLines(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, GREEN);
+    DrawTextEx(fallback_font, "GLYPH TOOL", (Vector2){ ox-32, oy - th *2  }, th, 0, GREEN);
+
+    for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++) {
+        Rectangle src = { x * cell_w, y * cell_h, cell_w, cell_h };
+        Rectangle dst = { ox + x * tw, oy + y * th, tw, th };
+        DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+        DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, DARKGREEN);
+        if (x == tx && y == ty) {
+            BeginBlendMode(BLEND_MULTIPLIED);
+            DrawRectangle(dst.x, dst.y, dst.width, dst.height, GREEN);
+            EndBlendMode();
+        }
+    }
+
+    if (tx >= 0 && tx < cols && ty >= 0 && ty < rows) {
+        char buf[32]; snprintf(buf, sizeof(buf), "[%d,%d]", tx, ty);
+        DrawTextEx(fallback_font, buf, (Vector2){ ox + (cols - 5) * tw, oy + (rows + 1) * th }, th, 0, GREEN);
+    }
+
+    typedef struct { char text[64]; int x, y; bool glyph; } Log;
+    static Log log[256]; static int logc = 0;
+    static const char *parts[9] = {
+        "corner_tl", "corner_tr", "corner_bl", "corner_br",
+        "edge_horizontal", "edge_vertical", "cap_left", "cap_right", "fill"
+    };
+    static int sel = 0;
+    static int preview_index = -1;
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (sel == 0 && logc < 255) {
+            strncpy(log[logc++].text, ">> New Set", 64);
+        }
+        if (tx >= 0 && tx < cols && ty >= 0 && ty < rows && sel < 9) {
+            snprintf(log[logc].text, 64, " .%s = (atlaspos){%d, %d},", parts[sel], tx, ty);
+            log[logc].x = tx; log[logc].y = ty; log[logc].glyph = true;
+            printf("%s\n", log[logc].text); fflush(stdout);
+            if (logc < 255) logc++;
+            sel++;
+        }
+        if (sel == 9) {
+            if (logc < 255) {
+                strncpy(log[logc++].text, "------------------------", 64);
+                log[logc - 1].glyph = false;
+            }
+            printf("------------------------\n\n"); fflush(stdout);
+            preview_index = logc - 10;
+            sel = 0;
+        }
+    }
+
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+        sel = 0;
+        printf("[tilepicker] Selection reset.\n"); fflush(stdout);
+        if (logc < 255) strncpy(log[logc++].text, "[tilepicker] Selection reset.", 64), log[logc - 1].glyph = false;
+    }
+
+    int lx = ox + (cols + 1) * tw + tw;
+    int ly = oy - 2 * th;
+    int lw = 22 * tw;
+    int line_h = th / 2;
+    int raw_lh = GetScreenHeight() - 6;
+    int lh = (raw_lh / line_h) * line_h;
+
+    DrawRectangle(lx, ly, lw, lh, BLACK);
+    DrawRectangleLines(lx, ly, lw, lh, GREEN);
+
+    int vis = lh / line_h;
+    int start = logc > vis - 2 ? logc - (vis - 2) : 0;
+
+    for (int i = start, j = 0; i < logc; i++, j++) {
+        Vector2 p = { lx + tw, ly + (j + 2) * line_h };
+        DrawTextEx(fallback_font, log[i].text, p, line_h, 0, GREEN);
+        if (log[i].glyph) {
+            Rectangle src = { log[i].x * cell_w, log[i].y * cell_h, cell_w, cell_h };
+            Rectangle dst = { lx + 4, p.y, tw / 2, line_h };
+            DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+        }
+    }
+
+    int show_preview = (sel > 0) ? (logc - sel) : preview_index;
+    if (show_preview >= 0) {
+        int px = ox -28, py = oy + (rows + 2) * th -28;
+        int pw = 3 * tw, ph = 4 * th;
+        DrawRectangle(px - 4, py - 4, pw + 8, ph + 8, BLACK);
+        DrawRectangleLines(px - 4, py - 4, pw + 8, ph + 8, GREEN);
+
+        int grid[3][3] = {
+            {0, 4, 1},
+            {5, 8, 5},
+            {2, 4, 3}
+        };
+
+        for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++) {
+            int i = grid[y][x];
+            int li = show_preview + i;
+            if (li < 0 || li >= logc || !log[li].glyph) continue;
+            Rectangle src = { log[li].x * cell_w, log[li].y * cell_h, cell_w, cell_h };
+            Rectangle dst = { px + x * tw, py + y * th, tw, th };
+            DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+        }
+
+        int strip_y = py + 3 * th + 4;
+        for (int i = 0; i < 3; i++) {
+            int part = (i == 0) ? 6 : (i == 1) ? 4 : 7; // cap_left, fill, cap_right
+            int li = show_preview + part;
+            if (li < 0 || li >= logc || !log[li].glyph) continue;
+            Rectangle src = { log[li].x * cell_w, log[li].y * cell_h, cell_w, cell_h };
+            Rectangle dst = { px + i * tw, strip_y, tw, th };
+            DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+}
+    }
+}
+
+
+
+
 
 // --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
 // --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
 // --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
+
+
+
 
 // Test font declarations (as per your request)
 Font customfont0;
@@ -497,6 +630,8 @@ Font customfont2;
 
 
 int main(void) {
+    
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     int cw = 8, ch = 8, gw = 80, gh = 47; // Full 80x47 grid screen
     InitWindow(gw * cw * 2, gh * ch * 2, "TMGUI Dungeon HUD (Revised)");
@@ -519,7 +654,10 @@ int main(void) {
 
 
     while (!WindowShouldClose()) {
+    if (IsKeyPressed(KEY_TAB)) {show_tilepicker = !show_tilepicker;}
+
     tm_canvas_begin(&canvas);
+
     ClearBackground(BLACK); // A darker background to highlight UI elements
 
 
@@ -541,8 +679,6 @@ tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
-
-
 
 tm_set_spacing(1);
 // --- VBOX A: List of Labels and Text (your original example) ---
@@ -594,19 +730,17 @@ tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
     tm_text("SKI: 7",OFFSET(p3,1,2));
     tm_text(">Teleport",OFFSET(p3,1,3));
 
-
-
-
-
-
-
-// (Rest of your main loop code, tm_canvas_end, BeginDrawing/EndDrawing, etc.)
-
-
     tm_canvas_end(&canvas);
 
         BeginDrawing();
+
         ClearBackground(BLACK); // Clear the actual window with black
+
+if (show_tilepicker) {
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+    tilepicker_tool();      // Then draw your tilepicker
+}
+
         EndDrawing();
     }
 
