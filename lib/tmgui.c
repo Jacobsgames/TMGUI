@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 static int cell_w, cell_h;
 
 static tm_theme current_theme;
@@ -26,6 +25,7 @@ void tm_update_transform(int scale, int pos_x, int pos_y) {
     canvas_y = pos_y;
 }
 
+
 Vector2 tm_mouse_grid(void) {
     Vector2 m = GetMousePosition();
     float pixel_rect = (m.x - canvas_x) / (float)canvas_scale;
@@ -33,10 +33,8 @@ Vector2 tm_mouse_grid(void) {
     return (Vector2){ pixel_rect / cell_w, py / cell_h };
 }
 
-
 // --- GRIDTOOLS ---
-
-static inline Rectangle gridrect_to_pixelrect(gridrect area) { // Converts a gridrect to a pixel-space Rectangle
+static inline Rectangle grect_to_pixelrect(grect area) { // Converts a grect to a pixel-space Rectangle
     return (Rectangle){
         area.x * cell_w,
         area.y * cell_h,
@@ -45,16 +43,16 @@ static inline Rectangle gridrect_to_pixelrect(gridrect area) { // Converts a gri
     };
 }
 
-static inline gridrect gridrect_offset(gridrect area, int x_off, int y_off) { //returns a copy of a grid rect, offset by input
-    return (gridrect){ area.x + x_off, area.y + y_off, area.w, area.h };
+static inline grect grect_offset(grect area, int x_off, int y_off) { //returns a copy of a grid rect, offset by input
+    return (grect){ area.x + x_off, area.y + y_off, area.w, area.h };
 }
 
 // Relative offset of a CELL from a parent rect
-static inline gridrect offset_cell(gridrect parent, int dx, int dy) {
+static inline grect offset_cell(grect parent, int dx, int dy) {
     return CELL(parent.x + dx, parent.y + dy);
 }
 
-static inline bool gridrect_valid(gridrect area) { //checks if a gridrect has valid size (eg above 0 x,y)
+static inline bool grect_valid(grect area) { //checks if a grect has valid size (eg above 0 x,y)
     return (area.w > 0 && area.h > 0);
 }
 
@@ -69,48 +67,68 @@ static inline int pixels_to_grid_y(float pixels) { // Converts vertical pixel di
 }
 
 // Replace gridpos_equal with rect position equality
-static inline bool cell_equal(gridrect a, gridrect b) {
+static inline bool cell_equal(grect a, grect b) {
     return (a.x == b.x && a.y == b.y);
 }
 
-// Check if a CELL (gridrect with w=1,h=1) is inside a bigger gridrect
-static inline bool rect_contains_cell(gridrect area, gridrect cell) {
+// Check if a CELL (grect with w=1,h=1) is inside a bigger grect
+static inline bool rect_contains_cell(grect area, grect cell) {
     return (cell.x >= area.x && cell.x < area.x + area.w &&
             cell.y >= area.y && cell.y < area.y + area.h &&
             cell.w == 1 && cell.h == 1);
 }
 
 // Get center CELL of a rect
-static inline gridrect rect_center_cell(gridrect area) {
+static inline grect rect_center_cell(grect area) {
     return CELL(area.x + area.w / 2, area.y + area.h / 2);
 }
 
-static gridrect get_area_and_txtpos(const char *text, gridrect area, gridrect *out_txtpos) {
-    // Calculate text width in grid cells (optimized for monospaced fonts)
-    int txt_w = strlen(text);
+static grect get_area_and_txtpos(const char *text, grect area, grect *out_txtpos) { // I prefer comments inline like this.
+    
+    int txt_w = strlen(text); // Calculate text width in grid cells (optimized for monospaced fonts)
 
     // Determine widget's actual width (w):
-    // 1. Use explicit width if provided (r.w > 0)
-    // 2. Else, stretch to container width if in VBOX layout and container_w > 0
-    // 3. Else, use text's natural width
-    int w = (area.w > 0) ? area.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : txt_w);
+    int w = (area.w > 0) ? area.w : // If area.w positive, use that value.
+            (area.w == -1 && // Else, if auto-width sentinel (-1) AND...
+             area.x == -1 && area.y == -1 && // ...auto-positioned (both x,y are -1) AND...
+             gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0) ? // ...VBOX mode.
+            gui_context.container_w : // Then stretch to VBOX width.
+            txt_w; // Else (auto-width but not stretching, or area.w is 0/other negative), use text's natural width.
 
     // Determine widget's actual height (h):
-    // 1. Use explicit height if provided (r.h > 0)
-    // 2. Else, default to 1 grid cell high for text
-    int h = (area.h > 0) ? area.h : 1;
+    int h = (area.h > 0) ? area.h : // Use explicit height if positive.
+            ((area.h == -1) ? 1 : 1); // If auto-height sentinel (-1), use 1. Else (0 or other), also use 1.
 
     // Determine widget's final position and size (final):
-    // 1. If auto-positioning requested (r.x/y < 0), get next available cell from layout system
-    // 2. Else, use explicit position from r combined with calculated w, h
-    gridrect final = (area.x < 0 && area.y < 0) ? tm_next_cell(w, h) : (gridrect){ area.x, area.y, w, h };
+    grect final;
+    if (area.x == -1 && area.y == -1) { // If auto-positioning
+        // Get the base position and advance the cursor for the next element
+        grect base_pos = tm_next_cell(w, h); 
+        
+        int aligned_x = base_pos.x; // Start with the layout's default X
+        // Apply horizontal alignment for the widget's starting position within the container
+        if (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0) {
+            if (h_align == ALIGN_CENTER) {
+                aligned_x += (gui_context.container_w - w) / 2;
+            } else if (h_align == ALIGN_RIGHT) {
+                aligned_x += (gui_context.container_w - w);
+            }
+        }
+        // Note: Vertical alignment for the widget's position is not usually done in VBOX
+        // as tm_next_cell handles vertical stacking directly.
+        
+        final = (grect){ aligned_x, base_pos.y, w, h }; // Construct final rect with aligned X
+    } else { // If explicitly positioned (POS or RECT)
+        final = (grect){ area.x, area.y, w, h };
+    }
 
-    // Calculate and store the aligned starting grid cell for the text within 'final' rect
-    *out_txtpos = tm_align_text_pos(final, txt_w, 1);
+    
+    *out_txtpos = tm_align_text_pos(final, txt_w, 1); // Calculate and store the aligned starting grid cell for the text within 'final' rect.
 
-    // Return the calculated overall bounding rectangle for the widget
-    return final;
+    
+    return final; // Return the calculated overall bounding rectangle for the widget.
 }
+
 
 
 // --- DRAW HELPERS ---
@@ -162,8 +180,8 @@ void tm_align_vertical(align_mode mode) {
     v_align = mode;
 }
 
-// Returns a gridrect (CELL) for text starting point aligned inside rect
-gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text_height_in_cells) {
+// Returns a grect (CELL) for text starting point aligned inside rect
+grect tm_align_text_pos(grect container, int text_width_in_cells, int text_height_in_cells) {
     int x = container.x; // padding now handled explicitly in caller
     int y = container.y;
 
@@ -179,9 +197,8 @@ gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text
     else if (v_align == ALIGN_BOTTOM)
         y = container.y + container.h - text_height_in_cells;
 
-    return CELL(x, y); // Return as a CELL gridrect
+    return CELL(x, y); // Return as a CELL grect
 }
-
 
 // --- Canvas ---
 tm_canvas tm_canvas_init(int grid_w, int grid_h, bool transparent) {
@@ -225,50 +242,49 @@ static Font get_active_font(void) {
     return fallback_font;
 }
 
-
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 // --- Primitives ---//////////////////////////////////////////////
 
-inline void tm_draw_fill_rect(gridrect area, Color color) {
-    Rectangle px = gridrect_to_pixelrect(area);
+inline void tm_draw_fill_rect(grect area, Color color) {
+    Rectangle px = grect_to_pixelrect(area);
     DrawRectangle(px.x, px.y, px.width, px.height, color);
 }
 
-inline void tm_draw_fill_cell(gridrect cell, Color color) {
-    // Convert single-cell gridrect to pixel-space Rectangle
-    Rectangle fill = gridrect_to_pixelrect((gridrect){ cell.x, cell.y, 1, 1 });
+inline void tm_draw_fill_cell(grect cell, Color color) {
+    // Convert cell grect to pixel-space Rectangle
+    Rectangle fill = grect_to_pixelrect((grect){ cell.x, cell.y, 1, 1 });
     // Draw filled rectangle using raylib helper
     DrawRectangleRec(fill, color);
 }
 
-void tm_draw_glyph(gridrect cell, atlaspos glyph, Color fg, Color bg) {
+void tm_draw_glyph(grect cell, atlaspos glyph, Color fg, Color bg) {
     Rectangle dest = (Rectangle){ cell.x * cell_w, cell.y * cell_h, cell_w, cell_h };
     Rectangle src = (Rectangle){ glyph.x * cell_w, glyph.y * cell_h, cell_w, cell_h };
     if (bg.a > 0) tm_draw_fill_cell(cell, bg);
     DrawTexturePro(glyph_atlas, src, dest, (Vector2){0, 0}, 0, fg);
 }
 
-void tm_draw_text(const char *text, gridrect cell, Color fg, Color bg) {
+void tm_draw_text(const char *text, grect cell, Color fg, Color bg) {
     Font font = get_active_font();
 
     for (int i = 0; text[i]; i++) {
         // Position of each character cell (offset horizontally)
-        gridrect char_cell = { cell.x + i, cell.y, 1, 1 }; // Ensure w and h are 1 for character cells
+        grect char_cell = { cell.x + i, cell.y, 1, 1 }; // Ensure w and h are 1 for character cells
 
         // Fill background for character cell
-        tm_draw_fill_rect(char_cell, bg); // Use tm_draw_fill_rect as char_cell is a gridrect
+        tm_draw_fill_rect(char_cell, bg); // Use tm_draw_fill_rect as char_cell is a grect
 
         // Convert grid rect to pixel position
-        Rectangle px = gridrect_to_pixelrect(char_cell);
+        Rectangle px = grect_to_pixelrect(char_cell);
 
         // Draw the character at pixel position
         DrawTextCodepoint(font, text[i], (Vector2){ px.x, px.y }, cell_h, fg);
     }
 }
 
-void tm_draw_panel(gridrect r) {
-    if (!gridrect_valid(r)) return;
+void tm_draw_panel(grect r) {
+    if (!grect_valid(r)) return;
 
     tm_panel_style style = current_theme.panel;
     panel_kit *kit = &style.kit;
@@ -282,62 +298,69 @@ void tm_draw_panel(gridrect r) {
         atlaspos left  = (kit->cap_left.x  >= 0) ? kit->cap_left  : kit->corner_tl;
         atlaspos right = (kit->cap_right.x >= 0) ? kit->cap_right : kit->corner_tr;
 
-        tm_draw_glyph(gridrect_offset(r, 0, 0), left, fg, bg);
+        tm_draw_glyph(grect_offset(r, 0, 0), left, fg, bg);
         for (int i = 1; i < r.w - 1; i++)
-            tm_draw_glyph(gridrect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
+            tm_draw_glyph(grect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
         if (r.w > 1)
-            tm_draw_glyph(gridrect_offset(r, r.w - 1, 0), right, fg, bg);
+            tm_draw_glyph(grect_offset(r, r.w - 1, 0), right, fg, bg);
         return;
     }
 
     // Draw corners
-    tm_draw_glyph(gridrect_offset(r, 0, 0), kit->corner_tl, fg, bg);
-    tm_draw_glyph(gridrect_offset(r, r.w - 1, 0), kit->corner_tr, fg, bg);
-    tm_draw_glyph(gridrect_offset(r, 0, r.h - 1), kit->corner_bl, fg, bg);
-    tm_draw_glyph(gridrect_offset(r, r.w - 1, r.h - 1), kit->corner_br, fg, bg);
+    tm_draw_glyph(grect_offset(r, 0, 0), kit->corner_tl, fg, bg);
+    tm_draw_glyph(grect_offset(r, r.w - 1, 0), kit->corner_tr, fg, bg);
+    tm_draw_glyph(grect_offset(r, 0, r.h - 1), kit->corner_bl, fg, bg);
+    tm_draw_glyph(grect_offset(r, r.w - 1, r.h - 1), kit->corner_br, fg, bg);
 
     // Draw top and bottom edges
     for (int i = 1; i < r.w - 1; i++) {
-        tm_draw_glyph(gridrect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
-        tm_draw_glyph(gridrect_offset(r, i, r.h - 1), kit->edge_horizontal, fg, bg);
+        tm_draw_glyph(grect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
+        tm_draw_glyph(grect_offset(r, i, r.h - 1), kit->edge_horizontal, fg, bg);
     }
 
     // Draw left and right edges
     for (int j = 1; j < r.h - 1; j++) {
-        tm_draw_glyph(gridrect_offset(r, 0, j), kit->edge_vertical, fg, bg);
-        tm_draw_glyph(gridrect_offset(r, r.w - 1, j), kit->edge_vertical, fg, bg);
+        tm_draw_glyph(grect_offset(r, 0, j), kit->edge_vertical, fg, bg);
+        tm_draw_glyph(grect_offset(r, r.w - 1, j), kit->edge_vertical, fg, bg);
     }
 
     // Fill the interior
     for (int i = 1; i < r.w - 1; i++) {
         for (int j = 1; j < r.h - 1; j++) {
-            tm_draw_glyph(gridrect_offset(r, i, j), kit->fill, fg, bg);
+            tm_draw_glyph(grect_offset(r, i, j), kit->fill, fg, bg);
         }
     }
 }
 
-
-
-
-gridrect tm_text(const char *text, gridrect area) {
-    gridrect txtpos;
-    gridrect final_area = get_area_and_txtpos(text, area, &txtpos);
+grect tm_text(const char *text, grect area) {
+    grect txtpos;
+    grect final_area = get_area_and_txtpos(text, area, &txtpos);
     tm_draw_text(text, txtpos, current_theme.text.foreground, current_theme.text.background);
     return final_area;
 }
 
-gridrect tm_label(const char *text, gridrect area) {
-    gridrect txtpos;
-    // HERE: final_label_area receives the returned value from the helper
-    gridrect final_label_area = get_area_and_txtpos(text, area, &txtpos);
-    // AND HERE: final_label_area is USED to draw the full background
-    tm_draw_fill_rect(final_label_area, current_theme.label.background);
+grect tm_label(const char *text, grect area) {
+    grect txtpos;
+    // HERE: final_area receives the returned value from the helper
+    grect final_area = get_area_and_txtpos(text, area, &txtpos);
+    // AND HERE: final_area is USED to draw the full background
+    tm_draw_fill_rect(final_area, current_theme.label.background);
     tm_draw_text(text, txtpos, current_theme.label.foreground, current_theme.label.background);
-    return txtpos;
+    return final_area;
+}
+
+grect tm_label_panel(const char *text, grect area) {
+    grect txtpos;
+    // HERE: final_area receives the returned value from the helper
+    grect final_area = get_area_and_txtpos(text, area, &txtpos);
+    // AND HERE: final_area is USED to draw the full background
+    tm_draw_panel(final_area);
+    tm_draw_text(text, txtpos, current_theme.label.foreground, current_theme.label.background);
+    return final_area;
 }
 
 
-/*bool tm_button(const char *label, gridrect r) {
+/*bool tm_button(const char *label, grect r) { // WIP IGNORE
     Font use_font = get_active_font();
     Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
     int txt_w = pixels_to_grid_x(txt_px.x);
@@ -345,109 +368,92 @@ gridrect tm_label(const char *text, gridrect area) {
     int w = (r.w > 0) ? r.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : txt_w);
     int h = (r.h > 0) ? r.h : 1;
 
-    gridrect final = (r.x < 0 && r.y < 0) ? tm_next_cell(w, h) : (gridrect){ r.x, r.y, w, h };
+    grect final = (r.x < 0 && r.y < 0) ? tm_next_cell(w, h) : (grect){ r.x, r.y, w, h };
 
-    gridrect text_cell_aligned = tm_align_text_pos(final, txt_w, 1); // This now returns a CELL gridrect
+    grect text_cell_aligned = tm_align_text_pos(final, txt_w, 1); // This now returns a CELL grect
 
     tm_draw_text(label, text_cell_aligned, current_theme.label.foreground, current_theme.label.background);
 }*/
 
-gridrect tm_panel(gridrect area) {
+grect tm_panel(grect area) {
     // compute final rect as usual
     int w = (area.w > 0) ? area.w : (gui_context.mode == LAYOUT_VBOX && gui_context.container_w > 0 ? gui_context.container_w : 1);
     int h = (area.h > 0) ? area.h : 1;
-    gridrect final;
+    grect final;
 
     if (area.x < 0 && area.y < 0) {
         final = tm_next_cell(w, h);
     } else {
-        final = (gridrect){ area.x, area.y, w, h };
+        final = (grect){ area.x, area.y, w, h };
     }
 
     tm_draw_panel(final);
     return final;
 }
 
+/*grect tm_label_panel(const char *text, grect area) {
+    grect final_area = tm_text(text, area);
+    tm_draw_panel(final_area);
+    tm_text(text, final_area);
+    return final_area;
+
+}*/
 
 
-gridrect tm_panel_titled (const char *text, gridrect area, int pad) {
 
-    gridrect final_area = tm_panel(area); //  get final_area from tm_panel call
+grect tm_panel_titled(const char *text, grect area, int pad) {
+    grect final_area = tm_panel(area);
 
-    int padding = pad; // Define your padding value once
-
-    gridrect title_area = { // Set title area as 1 high strip, panel wide, along the top edge
-        .x = final_area.x + padding, // Start X position after left padding
+    // 1-line strip along top of panel, with padding
+    grect title_area = {
+        .x = final_area.x + pad,
         .y = final_area.y,
-        .w = final_area.w,     //- (2 * padding), // Reduce width for both left and right padding
+        .w = final_area.w - (2 * pad),
         .h = 1
     };
 
-    gridrect textpos = tm_text(text, title_area); //  draw the text.
+    grect textpos = tm_text(text, title_area);
 
-    gridrect lcap_cell = { 
-        .x = (textpos.x-1), 
-        .y = (textpos.y),
-        .w = 1,    
-        .h = 1
-    };
+    // Only draw caps if there's room
+    if (pad >= 1) {
+        grect lcap_cell = CELL(textpos.x - 1, textpos.y);
+        grect rcap_cell = CELL(textpos.x + strlen(text), textpos.y);
 
-    gridrect rcap_cell = { 
-        .x = (textpos.x + strlen(text)), 
-        .y = (textpos.y),
-        .w = 1,    
-        .h = 1
-    };
-
-    
-    if ( (pad >= 1 && h_align == ALIGN_LEFT) || (h_align == ALIGN_CENTER) ) {
-        tm_draw_glyph(lcap_cell,(atlaspos){4, 11},current_theme.panel.foreground, current_theme.panel.background); 
+        tm_draw_glyph(lcap_cell, current_theme.panel.kit.cap_left, current_theme.panel.foreground, current_theme.panel.background);
+        tm_draw_glyph(rcap_cell, current_theme.panel.kit.cap_right, current_theme.panel.foreground, current_theme.panel.background);
     }
 
-    if ( (pad >= 1 && h_align == ALIGN_RIGHT) || (h_align == ALIGN_CENTER) ) {
-        tm_draw_glyph(rcap_cell,(atlaspos){3, 12},current_theme.panel.foreground, current_theme.panel.background); 
-    }
-
-    
-
-    tm_draw_glyph(rcap_cell,(atlaspos){3, 12},current_theme.panel.foreground, current_theme.panel.background);
-
-    gridrect content_area = { // Calculate content_area relative to final_area.
+    grect content_area = {
         .x = final_area.x,
-        .y = final_area.y + 1, // 1 cell below the title strip
+        .y = final_area.y + 1,
         .w = final_area.w,
-        .h = final_area.h - 1  // Remaining height
+        .h = final_area.h - 1
     };
-    
-    return content_area; //  Return the content_area, the area children will follow (title h subtracted)
+
+    return content_area;
 }
-
-
-
-
-
 
 
 ///////////////////////////////////////////////////
 // --- Layout ---/////////////////////////////////
-gridrect tm_next_cell(int w, int h) {
+grect tm_next_cell(int w, int h) {
     int x = gui_context.cursor_x;
     int y = gui_context.cursor_y;
 
     if (gui_context.mode == LAYOUT_HBOX) gui_context.cursor_x += w + layout_spacing;
     else if (gui_context.mode == LAYOUT_VBOX) gui_context.cursor_y += h + layout_spacing;
 
-    return (gridrect){ x, y, w, h };
+    return (grect){ x, y, w, h };
 }
 
-void tm_vbox(gridrect area) {
+void tm_vbox(grect area) {
     gui_context.mode = LAYOUT_VBOX;
     gui_context.cursor_x = (area.x < 0 ? 0 : area.x);
     gui_context.cursor_y = (area.y < 0 ? 0 : area.y);
     gui_context.container_w = area.w; // ← Set container width
 }
 
-void tm_hbox(gridrect area) {
+void tm_hbox(grect area) {
     gui_context.mode = LAYOUT_HBOX;
     gui_context.cursor_x = (area.x < 0 ? 0 : area.x);
     gui_context.cursor_y = (area.y < 0 ? 0 : area.y);
@@ -507,10 +513,13 @@ ALIGN(LEFT,TOP);
 tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
 ALIGN(RIGHT,TOP);
 tm_vbox(RECT(25,33,54,16));
+tm_label("ACTIONS",SIZE(14,3));
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
+tm_label_panel("ACTIONS",SIZE(11,1));
+
 
 
 // --- VBOX A: List of Labels and Text (your original example) ---
@@ -541,7 +550,7 @@ tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
     ALIGN(LEFT,TOP); // Alignment for elements *within* Vbox B
 
     // Character 1: Gorgon
-    gridrect p0 = tm_panel(SIZE(14,5)); // Panel 0: Auto-positioned within Vbox B, full width of 14, height 5
+    grect p0 = tm_panel(SIZE(14,5)); // Panel 0: Auto-positioned within Vbox B, full width of 14, height 5
     tm_label("Gorgon",RELRECT(p0,0,0,8,1)); // Name label, explicit 8x1 size at 0,0 offset
     tm_text("PWR: 6",OFFSET(p0,1,1)); // Power text, auto-sized, at 1,1 offset
     tm_text("SKI: 3",OFFSET(p0,1,2)); // Skill text, auto-sized, at 1,2 offset
@@ -549,35 +558,24 @@ tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
 
 
     // Character 2: Velbort
-    gridrect p1 = tm_panel(SIZE(14,5)); // Panel 1: Auto-positioned within Vbox B
+    grect p1 = tm_panel(SIZE(14,5)); // Panel 1: Auto-positioned within Vbox B
     tm_label("Velbort",RELRECT(p1,0,0,8,1));
     tm_text("PWR: 3",OFFSET(p1,1,1));
     tm_text("SKI: 4",OFFSET(p1,1,2));
     tm_text(">Drain Life",OFFSET(p1,1,3));
 
     // Character 4: Zarthus
-    gridrect p3 = tm_panel(SIZE(14,5)); // Panel 3: Auto-positioned within Vbox B
+    grect p3 = tm_panel(SIZE(14,5)); // Panel 3: Auto-positioned within Vbox B
     tm_label("Zarthus",RELRECT(p3,0,0,8,1));
     tm_text("PWR: 5",OFFSET(p3,1,1));
     tm_text("SKI: 7",OFFSET(p3,1,2));
     tm_text(">Teleport",OFFSET(p3,1,3));
 
 
-    // Character 5: Flink
-    gridrect p4 = tm_panel(SIZE(14,5)); // Panel 4: Auto-positioned within Vbox B
-    tm_label("Flink",RELRECT(p4,0,0,8,1));
-    tm_text("PWR: 2",OFFSET(p4,1,1));
-    tm_text("SKI: 9",OFFSET(p4,1,2));
-    tm_text(">Charm",OFFSET(p4,1,3));
 
 
-    // Character 6: Xylo
-    gridrect p5 = tm_panel(SIZE(14,5)); // Panel 5: Auto-positioned within Vbox B
-    tm_label("Xylo",RELRECT(p5,0,0,8,1));
-    tm_text("PWR: 7",OFFSET(p5,1,1));
-    tm_text("SKI: 5",OFFSET(p5,1,2));
-    tm_text(">Sonic Burst",OFFSET(p5,1,3));
-    // No spacing after the last panel in the list
+
+
 
 // (Rest of your main loop code, tm_canvas_end, BeginDrawing/EndDrawing, etc.)
 

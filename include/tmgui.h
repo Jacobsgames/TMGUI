@@ -3,7 +3,7 @@
 #include "raylib.h"
 
 // --- Grid Rect ---
-typedef struct { int x, y, w, h; } gridrect;
+typedef struct { int x, y, w, h; } grect;
 
 // --- Offscreen Canvas ---
 typedef struct {
@@ -35,28 +35,28 @@ extern layout_context gui_context;
 
 // --- Helpers ---
 
-#define AUTO ((gridrect){ -1, -1, 0, 0 })
-#define SIZE(w,h) ((gridrect){ -1, -1, (w), (h) })
-#define POS(x,y) ((gridrect){ x, y, 0, 0 })
+#define AUTO ((grect){ -1, -1, -1, -1 })
+#define SIZE(w,h) ((grect){ -1, -1, (w), (h) })
+#define POS(x,y) ((grect){ x, y, -1, -1 })
 
-#define RECT(x,y,w,h) ((gridrect){ x, y, w, h })
+#define RECT(x,y,w,h) ((grect){ x, y, w, h })
 
-// RELRECT: Explicitly position and size an element relative to a parent gridrect.
+// RELRECT: Explicitly position and size an element relative to a parent grect.
 // (e.g., RELRECT(panel_area, 1, 1, 8, 3) for 8x3 rect at 1,1 offset from panel)
 #define RELRECT(parent_r, dx, dy, width, height) \
-    ((gridrect){ (parent_r).x + (dx), (parent_r).y + (dy), (width), (height) })
+    ((grect){ (parent_r).x + (dx), (parent_r).y + (dy), (width), (height) })
 
-// RELPOS: Position an element relative to a parent gridrect, with auto-sizing.
+// RELPOS: Position an element relative to a parent grect, with auto-sizing.
 // (e.g., RELPOS(panel_area, 1, 1) for auto-sized element at 1,1 offset from panel)
-// The width/height will be determined by the widget's internal logic (e.g., text length for tm_text/label).
+// The width/height will be determined by the elements's internal logic (e.g., strlen w, h 1 for tm_text/label).
 #define RELPOS(parent_r, dx, dy) \
-    ((gridrect){ (parent_r).x + (dx), (parent_r).y + (dy), 0, 0 }) // w=0, h=0 signals auto-size
+    ((grect){ (parent_r).x + (dx), (parent_r).y + (dy), -1, -1 }) // w= -1, h= -1 signals auto-size
 
 
-#define CELL(x, y)             ((gridrect){ (x), (y), 1, 1 })    // formerly gridpos
-#define OFFSET(r, dx, dy)      ((gridrect){ (r).x + (dx), (r).y + (dy), (r).w, (r).h }) // formerly RRECT or RPOS
+#define CELL(x, y)             ((grect){ (x), (y), 1, 1 })    // formerly gridpos
+#define OFFSET(r, dx, dy)      ((grect){ (r).x + (dx), (r).y + (dy), (r).w, (r).h }) // formerly RRECT or RPOS
 
-// TEXT and GLYPH macros now expect a gridrect (CELL) for position
+// TEXT and GLYPH macros now expect a grect (CELL) for position
 #define TEXT(s, cell_rect, fg, bg) tm_draw_text((s), (cell_rect), (fg), (bg))
 #define GLYPH(cell_rect, tile, fg, bg) tm_draw_glyph((cell_rect), (tile), (fg), (bg))
 
@@ -139,9 +139,9 @@ static const tm_theme THEME_GREEN = {
 };
 
 // --- Core Layout API ---
-void tm_vbox(gridrect area);
-void tm_hbox(gridrect area);
-gridrect tm_next_cell(int w, int h);
+void tm_vbox(grect area);
+void tm_hbox(grect area);
+grect tm_next_cell(int w, int h);
 
 // --- System Init ---
 void tmgui_init(int cell_w, int cell_h);
@@ -153,21 +153,22 @@ void tm_align_vertical(align_mode mode);
 void tm_set_spacing(int spacing);
 
 // --- Primitives 'tm_draw' ---
-void tm_draw_fill_cell(gridrect cell, Color color);
-void tm_draw_fill_rect(gridrect area, Color color);
-void tm_draw_glyph(gridrect cell, atlaspos tile, Color fg, Color bg);
-void tm_draw_panel(gridrect r);
-void tm_draw_text(const char *text, gridrect cell, Color fg, Color bg);
+void tm_draw_fill_cell(grect cell, Color color);
+void tm_draw_fill_rect(grect area, Color color);
+void tm_draw_glyph(grect cell, atlaspos tile, Color fg, Color bg);
+void tm_draw_panel(grect r);
+void tm_draw_text(const char *text, grect cell, Color fg, Color bg);
 
-// ALIGNMENT HELPER: Now returns a gridrect (CELL)
-gridrect tm_align_text_pos(gridrect container, int text_width_in_cells, int text_height_in_cells);
+// ALIGNMENT HELPER: Now returns a grect (CELL)
+grect tm_align_text_pos(grect container, int text_width_in_cells, int text_height_in_cells);
 
 
 // --- Elements 'tm_f' ---
-gridrect tm_text(const char *text, gridrect cell);
-gridrect tm_label(const char *text, gridrect area);
-gridrect tm_panel(gridrect area);
-gridrect tm_panel_titled (const char *text, gridrect area, int pad);
+grect tm_text(const char *text, grect area);
+grect tm_label(const char *text, grect area);
+grect tm_panel(grect area);
+grect tm_label_panel(const char *text, grect area);
+grect tm_panel_titled (const char *text, grect area, int pad);
 
 // --- Mouse Input / Transform ---
 void tm_update_transform(int scale, int offX, int offY);
