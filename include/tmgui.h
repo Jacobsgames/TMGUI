@@ -72,6 +72,9 @@ extern layout_context gui_context;
 typedef struct { int x, y; } atlaspos;
 #define TILE(x,y) ((atlaspos){ x, y })
 
+
+////// expand to handle top, bottom, left, right and 'strip'. //////////////
+///////////// also arange so it constructs nice in preview///////////
 typedef struct {
     atlaspos corner_tl;
     atlaspos corner_tr;
@@ -83,6 +86,7 @@ typedef struct {
     atlaspos cap_right;
     atlaspos fill;
 } panel_kit;
+
 
 // --- Styles ---
 typedef struct {
@@ -110,7 +114,7 @@ typedef struct {
     tm_button_style button;
 } tm_theme;
 
-static const panel_kit KIT_DEFAULT = {
+static const panel_kit KIT_DEFAULT = { 
     .corner_tl = (atlaspos){15, 15},
     .corner_tr = (atlaspos){15, 15},
     .corner_bl = (atlaspos){15, 15},

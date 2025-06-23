@@ -495,7 +495,7 @@ void glyph_tool(void) {
     int ox = 65, oy = 64, tw = cell_w * 4, th = cell_h * 4;
     Vector2 m = GetMousePosition();
     int tx = (m.x - ox) / tw, ty = (m.y - oy) / th;
-    
+
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
     DrawRectangle(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, BLACK);
     DrawRectangleLines(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, GREEN);
@@ -529,7 +529,7 @@ void glyph_tool(void) {
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (sel == 0 && logc < 255) {
-            strncpy(log[logc++].text, ">> New Set", 64);
+            strncpy(log[logc++].text, ">>[New Set]--------------------------", 64);
         }
         if (tx >= 0 && tx < cols && ty >= 0 && ty < rows && sel < 9) {
             snprintf(log[logc].text, 64, " .%s = (atlaspos){%d, %d},", parts[sel], tx, ty);
@@ -540,10 +540,10 @@ void glyph_tool(void) {
         }
         if (sel == 9) {
             if (logc < 255) {
-                strncpy(log[logc++].text, "------------------------", 64);
+                strncpy(log[logc++].text, ">>[Set Complete]---------------------", 64);
                 log[logc - 1].glyph = false;
             }
-            printf("------------------------\n\n"); fflush(stdout);
+            printf(">>[Set Complete]---------------------\n\n"); fflush(stdout);
             preview_index = logc - 10;
             sel = 0;
         }
@@ -551,8 +551,8 @@ void glyph_tool(void) {
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
         sel = 0;
-        printf("[tilepicker] Selection reset.\n"); fflush(stdout);
-        if (logc < 255) strncpy(log[logc++].text, "[tilepicker] Selection reset.", 64), log[logc - 1].glyph = false;
+        printf("[Selection Reset]\n"); fflush(stdout);
+        if (logc < 255) strncpy(log[logc++].text, "[Selection Reset]", 64), log[logc - 1].glyph = false;
     }
 
     int lx = ox + (cols + 1) * tw + tw;

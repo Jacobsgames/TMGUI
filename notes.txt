@@ -1,0 +1,37 @@
+- add global padding func
+
+set Z index () - for defining layer out of scope/flow
+
+expand to handle top, bottom, left, right and 'strip'. and arrange to layout nice in preview (panel_kit)
+
+If you ever need popups/tooltips/floating panels, a separate tm_end_frame_late() call could be your go-to for "draw after everything else".
+
+
+
+🚧 Future-proofing
+If you’re concerned about autocomplete conflicts:
+
+Keep tm_draw_ namespace for raw glyph/pixel ops
+
+Reserve tm_ prefix (no verb) for layout-aware widgets
+
+
+SPACE and HSPACE Macros: - single spacer idea
+
+Stink: These call tm_text("", SIZE(-1, h)) or tm_text("", SIZE(w, -1)).
+Issue: While functional, tm_text is primarily for displaying text. Using it for pure spacing might be a slight abuse of its intent and could potentially trigger unwanted text-related side effects or draw calls (like drawing a blank background cell for an empty string, even if transparent).
+Recommendation: If spacing is just about advancing gui_context.cursor, a dedicated tm_space(w, h) function that internally calls tm_next_cell directly (without involving get_area_and_txtpos or text drawing) would be cleaner and more explicit about its purpose. For now, it works, but it's a minor "code smell."
+
+
+
+Wrap the implementation with an #ifdef:
+
+// tmgui.h
+
+#ifndef TMGUI_H
+#define TMGUI_H
+// ... declarations ...
+#endif // TMGUI_H
+
+#ifdef TMGUI_IMPLEMENTATION
+// ... 
