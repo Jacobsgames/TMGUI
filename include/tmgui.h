@@ -151,6 +151,7 @@ void tm_set_font(Font *font);
 void tm_align_horizontal(align_mode mode);
 void tm_align_vertical(align_mode mode);
 void tm_set_spacing(int spacing);
+void tm_set_padding(int padding);
 
 // --- Primitives 'tm_draw' ---
 void tm_draw_fill_cell(grect cell, Color color);
@@ -167,7 +168,7 @@ grect tm_align_text_pos(grect container, int text_width_in_cells, int text_heigh
 grect tm_text(const char *text, grect area);
 grect tm_label(const char *text, grect area);
 grect tm_panel(grect area);
-grect tm_label_panel(const char *text, grect area);
+grect tm_label_panel(const char *text, grect area, int text_nudge_x);
 grect tm_panel_titled (const char *text, grect area, int pad);
 
 // --- Mouse Input / Transform ---

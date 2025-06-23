@@ -9,14 +9,17 @@ static int cell_w, cell_h;
 static tm_theme current_theme;
 static Font current_font = {0};
 static Font fallback_font = {0};
-static int layout_spacing = 0;
 static Texture2D glyph_atlas;
+
 static int canvas_scale, canvas_x, canvas_y;
 
 layout_context gui_context = {0};
 
+static int layout_spacing = 0;
+static int layout_padding = 0;
 static align_mode h_align = ALIGN_LEFT;
 static align_mode v_align = ALIGN_TOP;
+
 
 // --- Transform ---
 void tm_update_transform(int scale, int pos_x, int pos_y) {
@@ -170,6 +173,10 @@ void tm_set_font(Font *font) {
 
 void tm_set_spacing(int spacing) {
     layout_spacing = spacing;
+}
+
+void tm_set_padding(int padding) {
+    layout_padding = padding;
 }
 
 void tm_align_horizontal(align_mode mode) {
@@ -349,14 +356,30 @@ grect tm_label(const char *text, grect area) {
     return final_area;
 }
 
-grect tm_label_panel(const char *text, grect area) {
+grect tm_label_panel(const char *text, grect area, int padding) { 
     grect txtpos;
-    // HERE: final_area receives the returned value from the helper
-    grect final_area = get_area_and_txtpos(text, area, &txtpos);
-    // AND HERE: final_area is USED to draw the full background
-    tm_draw_panel(final_area);
-    tm_draw_text(text, txtpos, current_theme.label.foreground, current_theme.label.background);
-    return final_area;
+    grect final_area = get_area_and_txtpos(text, area, &txtpos); 
+    tm_draw_panel(final_area); 
+    
+    int margin_pad = 0; // padding to add from margin IF in left/right
+
+    if ( (h_align != ALIGN_CENTER) && (padding == -1) ) //if padding arg sentinel is -1, 'center pad'
+        margin_pad = (final_area.w - strlen(text))/2; // calculates the margin padding for centering the text
+    else 
+        margin_pad = padding; // else use the manual padding
+
+    // check which direction to 'pad' based on align mode
+    switch (h_align) {
+        case ALIGN_LEFT:  txtpos.x += margin_pad; break;
+        case ALIGN_RIGHT: txtpos.x -= margin_pad; break;
+        case ALIGN_CENTER:break;
+        default:break;
+    }
+
+    //draw the text
+    tm_draw_text(text, txtpos, current_theme.label.foreground, current_theme.label.background); 
+    
+    return final_area; 
 }
 
 
@@ -509,30 +532,30 @@ int main(void) {
 // --- Panel Frame A and B (Visual boundaries for Vbox A & B) ---
 tm_panel(RECT(0,0,13,45)); // list frame A
 tm_panel(RECT(12,0,13,45)); // list frame B
-ALIGN(LEFT,TOP);
-tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
 ALIGN(RIGHT,TOP);
+tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
+ALIGN(LEFT,CENTER);
 tm_vbox(RECT(25,33,54,16));
-tm_label("ACTIONS",SIZE(14,3));
+tm_label_panel("ACTIONS",AUTO,-1);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
-tm_label_panel("ACTIONS",SIZE(11,1));
 
 
 
+tm_set_spacing(1);
 // --- VBOX A: List of Labels and Text (your original example) ---
 tm_vbox(RECT(1,1,11,45)); // This sets gui_context for elements in this Vbox
     
-    ALIGN(LEFT,CENTER);
+    ALIGN(CENTER,CENTER);
     tm_text("ACTIONS",SIZE(11,1));
 
     ALIGN(CENTER,CENTER);
-    tm_label("ABILITY",SIZE(11,3));
-    tm_label("USE",SIZE(11,3));
-    tm_label("TALK",SIZE(11,3));
-    tm_label("FLIRT",SIZE(11,3));
+    tm_label_panel("ABILITY",SIZE(-1,3),0);
+    tm_label_panel("  USE  ",AUTO,0);
+    tm_label_panel(" TALK  ",AUTO,0);
+    tm_label_panel(" FLIRT ",AUTO,0);
 
     ALIGN(LEFT,CENTER);
     tm_text("ITEMS",SIZE(11,1));
