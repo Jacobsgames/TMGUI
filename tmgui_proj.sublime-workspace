@@ -1,0 +1,777 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"gly",
+				"glyph_tool"
+			],
+			[
+				"ALIGN",
+				"ALIGN_RIGHT"
+			],
+			[
+				"fina",
+				"final_area"
+			],
+			[
+				"tm",
+				"tm_text"
+			],
+			[
+				"alig",
+				"ALIGN_CENTER"
+			],
+			[
+				"LEFT",
+				"ALIGN_LEFT"
+			],
+			[
+				"align",
+				"align_mode"
+			],
+			[
+				"rca",
+				"rcap_y"
+			],
+			[
+				"lca",
+				"lcap_y"
+			],
+			[
+				"tm_draw",
+				"tm_draw_glyph"
+			],
+			[
+				"fin",
+				"final_area"
+			],
+			[
+				"tm_set",
+				"tm_set_spacing"
+			],
+			[
+				"grid_to",
+				"gridrect_to_pixelrect"
+			],
+			[
+				"inc",
+				"include"
+			],
+			[
+				"DARK",
+				"DARKGRAY"
+			],
+			[
+				"tm_al",
+				"tm_align_vertical"
+			],
+			[
+				"ALIG",
+				"ALIGN_CENTER"
+			],
+			[
+				"cel",
+				"cell_w"
+			],
+			[
+				"h",
+				"cell_h"
+			],
+			[
+				"cell",
+				"cell_h"
+			],
+			[
+				"ce",
+				"cell_w"
+			],
+			[
+				"TMGUI",
+				"STYLE_TMGUI"
+			],
+			[
+				"TM",
+				"TM_ALIGN_RIGHT"
+			],
+			[
+				"STYLE",
+				"STYLE_TMGUI"
+			],
+			[
+				"GRID",
+				"GRID_HEIGHT"
+			],
+			[
+				"TMG",
+				"STYLE_TMGUI"
+			],
+			[
+				"tmg",
+				"tmgui_shutdown"
+			],
+			[
+				"tmgui",
+				"tmgui_init"
+			],
+			[
+				"Frame",
+				"FRAME_HEIGHT"
+			],
+			[
+				"F",
+				"FRAME_HEIGHT"
+			],
+			[
+				"FRAME",
+				"FRAME_HEIGHT"
+			],
+			[
+				"FRA",
+				"FRAME_HEIGHT"
+			],
+			[
+				"FRAM",
+				"FRAME_HEIGHT"
+			],
+			[
+				"main",
+				"main_font"
+			],
+			[
+				"in",
+				"include"
+			],
+			[
+				"W",
+				"WINDOW_HEIGHT"
+			],
+			[
+				"def",
+				"def\tFunction"
+			],
+			[
+				"player",
+				"player_pos"
+			],
+			[
+				"DrawRect",
+				"DrawRectangleV(position: Vector2, size: Vector2, color: Color)"
+			],
+			[
+				"pla",
+				"player_pos"
+			],
+			[
+				"Rectangle",
+				"Rectangle"
+			],
+			[
+				"Circle",
+				"CheckCollisionCircleRec(center: Vector2, radius: f32, rec: Rectangle) "
+			],
+			[
+				"pl",
+				"player_pos"
+			],
+			[
+				"de",
+				"delta"
+			],
+			[
+				"text",
+				"Texture"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "Packages/User/RaylibC.sublime-build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/User/RaylibC.sublime-build",
+					""
+				],
+				[
+					"Packages/User/RaylibC.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"Packages/User/RaylibC.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"brow",
+				"Preferences: Browse Packages"
+			],
+			[
+				"scheme",
+				"UI: Select Color Scheme"
+			],
+			[
+				"them",
+				"UI: Select Theme"
+			],
+			[
+				"guna",
+				"Guna"
+			],
+			[
+				"theme",
+				"UI: Select Theme"
+			],
+			[
+				"pref pack",
+				"Preferences: Package Control Settings"
+			],
+			[
+				"is",
+				"Package Control: Install Package"
+			],
+			[
+				"packa",
+				"Package Control: Advanced Install Packages"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"brows",
+				"Preferences: Browse Packages"
+			],
+			[
+				"install ",
+				"Package Control: Install Package"
+			],
+			[
+				"remov",
+				"Package Control: Remove Package"
+			],
+			[
+				"materia",
+				"Material Theme: Configuration"
+			],
+			[
+				"material",
+				"Material Theme: Configuration"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"pick",
+				"Color Picker"
+			],
+			[
+				"istall",
+				"Package Control: Install Package"
+			],
+			[
+				"color scheme edi",
+				"Color Scheme Editor: Edit current color scheme"
+			],
+			[
+				"package ",
+				"Package Control: Install Package"
+			],
+			[
+				"packagede",
+				"PackageDev: New Color Scheme"
+			],
+			[
+				"pac",
+				"Package Control: Install Package"
+			],
+			[
+				"lsp",
+				"LSP: Disable Language Server in Project"
+			],
+			[
+				"lsp setting",
+				"Preferences: LSP-clangd Settings"
+			],
+			[
+				"clang",
+				"Preferences: LSP-clangd Settings"
+			],
+			[
+				"pack",
+				"Package Control: Install Package"
+			],
+			[
+				"LPS rese",
+				"LSP: Restart Server"
+			],
+			[
+				"lsp: res",
+				"LSP: Restart Server"
+			],
+			[
+				"package",
+				"Package Control: Install Package"
+			],
+			[
+				"term",
+				"Terminus: Toggle Panel"
+			],
+			[
+				"color scheme",
+				"UI: Select Color Scheme"
+			],
+			[
+				"github ",
+				"Preferences: GitHubTools"
+			],
+			[
+				"set synta",
+				"Set Syntax: C"
+			],
+			[
+				"git ",
+				"Set Syntax: Git Config"
+			],
+			[
+				"Terminus",
+				"Terminus: Toggle Panel"
+			],
+			[
+				"color them",
+				"UI: Select Color Scheme"
+			],
+			[
+				"remove pack",
+				"Package Control: Remove Package"
+			],
+			[
+				"package inst",
+				"Package Control: Install Package"
+			],
+			[
+				"color",
+				"Colorsublime: Install Theme"
+			],
+			[
+				"install pack",
+				"Package Control: Install Package"
+			],
+			[
+				"",
+				"UI: Select Color Scheme"
+			],
+			[
+				"lsp ena",
+				"LSP: Enable Language Server in Project"
+			],
+			[
+				"INSTALL",
+				"Package Control: Install Package"
+			],
+			[
+				"REMOCE",
+				"Package Control: Remove Package"
+			],
+			[
+				"COLOR PICKER",
+				"Color Picker: Insert Color"
+			],
+			[
+				"install package ",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 157.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Code/tmgui",
+		"/C/Code/tmgui/include",
+		"/C/Code/tmgui/lib"
+	],
+	"file_history":
+	[
+		"/C/Code/tmgui/include/tmgui.h",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/Colorsublime - Themes/cache/Colorsublime-Themes-master/themes/Water_Ritual.tmTheme",
+		"/C/Code/tmgui/lib/tmgui.c",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/User/water_ritual.sublime-theme",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/User/Earthsong_Dark.sublime-color-scheme",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/Material Theme/schemes/Material-Theme-Darker.tmTheme",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/Colorsublime - Themes/cache/Colorsublime-Themes-master/themes/Earthsong_Dark.tmTheme",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/Colorsublime - Themes/Flatgrammer.tmTheme",
+		"/C/Code/tmgui/.clangd",
+		"/C/Code/tmgui/lib/.clangd",
+		"/C/Code/tmgui/old.c",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/User/RaylibC.sublime-build",
+		"/C/Code/tmgui/README.md",
+		"/C/Users/theja/OneDrive/Desktop/tmgui.h",
+		"/C/Users/theja/OneDrive/Desktop/tmgui.c",
+		"/C/Code/tmgui/fonts/Kitchen Sink.ttf",
+		"/C/Code/tmgui/tmgui.c",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/User/RaylibC",
+		"/C/Code/TileGen/tmgui.c",
+		"/C/Code/TileGen/test.py",
+		"/C/Users/theja/Downloads/test.py",
+		"/C/Code/OdinGame/NOTES.txt",
+		"/C/Code/OdinGame/assets/round_cat.png",
+		"/C/Odin/vendor/raylib/raylib.odin",
+		"/C/Users/theja/Downloads/pixel_tool_demo.py",
+		"/C/Users/theja/OneDrive/Desktop/Raylib Tools/rguilayout_v4.0_win_x64/USAGE.md",
+		"/C/Users/theja/OneDrive/Desktop/Raylib Tools/layout_name.c",
+		"/C/Odin/core/math/linalg/general.odin",
+		"/C/Code/OdinGame/source/game.odin",
+		"/C/Users/theja/Documents/Game Dev/GitProjects/BuildsRepo/Jacobsgames/mario-more/mario.c",
+		"/C/Odin/core/mem/alloc.odin",
+		"/C/Odin/core/fmt/fmt.odin",
+		"/C/Code/OdinGame/source/NOTES.txt",
+		"/C/Code/OdinGame/source/notes.odin",
+		"/C/Users/theja/AppData/Roaming/Sublime Text/Packages/Colorsublime/Colorsublime.sublime-settings",
+		"/C/Code/odin-raylib-hot-reload-game-template-main/source/game.odin",
+		"/C/Code/OdinGame/build_hot_reload.bat",
+		"/C/Code/OdinGame/source/main_hot_reload/main_hot_reload.odin",
+		"/C/Odin/vendor/raylib/raygui.odin",
+		"/C/Code/odin-raylib-hot-reload-game-template-main/source/HiWorld.odin",
+		"/C/Odin/odin.exe"
+	],
+	"find":
+	{
+		"height": 49.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"69ea35",
+			"7EF23A",
+			"61",
+			"61df3",
+			"61df34",
+			"member",
+			"variable.other.member",
+			"69ea35",
+			"76ea48",
+			"editor_",
+			"e8d4c0",
+			"DB784D",
+			"f46020",
+			"tm_label",
+			"xp",
+			"tm_global_padding",
+			"gridrect",
+			"final_label_area",
+			"p1",
+			" ",
+			"text_origin_cell",
+			"r",
+			"tm_label",
+			"tile",
+			"relative_pos",
+			"-1",
+			"current_style",
+			"tm_label_style",
+			"rect_style",
+			"tm_draw_style_rect_style",
+			"ui_canvas",
+			"tm_fill_cell",
+			"tm_fill_rect",
+			"tm_draw_bevel",
+			"tm_rect",
+			"tm_rect_bevel",
+			"tm_text",
+			"tm_glyph",
+			"tm_draw_glyph",
+			"tm_glyph_rect",
+			"rectpos_offset",
+			"ui_canvas",
+			"flat",
+			"gui_context",
+			"text_width",
+			"tw",
+			"sz",
+			"text_size",
+			"tm_align",
+			"tm_align_mode",
+			"g_tm_align_h",
+			"g_tm_align_v",
+			"text_width",
+			"sz",
+			"final",
+			"use",
+			"g_v_align",
+			"g_h_align",
+			"px",
+			"use",
+			"mg",
+			"g_tm_offY",
+			"g_tm_offX",
+			"g_tm_scale",
+			"gui_frame",
+			"tm_canvas",
+			"g_tm_offY",
+			"g_tm_offX",
+			"gui_frame",
+			"ctx",
+			"current_ctx",
+			"LayoutContext*",
+			"#define MAX_LAYOUT_STACK 8",
+			"TMGUIlayout",
+			"TILE_SIZE",
+			"inited",
+			"static",
+			"input_rect",
+			"r",
+			"align",
+			"ALIGN",
+			"next_cell",
+			"MAX",
+			"make_cell",
+			"tm_update ",
+			"push",
+			"resolve_axis",
+			"resolve",
+			"imgui_style",
+			"current_style"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"grect",
+			"tm_text",
+			"glyph",
+			"rpos",
+			"current_theme",
+			"tm_label_rect",
+			"tm_rect_rect",
+			"tm_rect_style",
+			"rect_style",
+			"tm_canvas",
+			"tm_draw_fill_cell",
+			"tm_draw_fill_rect",
+			"tm_draw_bevel_rect",
+			"tm_draw_style_rect",
+			"tm_draw_bevel",
+			"tm_draw_text",
+			"tm_draw_glyph",
+			"tm_draw_panel",
+			"gridrect_pos_offset",
+			"txt_width",
+			"txt_width_px",
+			"h_align",
+			"v_align",
+			"text_size",
+			"final_rect",
+			"v_align",
+			"h_align",
+			"pixel_rect",
+			"final_rect",
+			"mouse_grid",
+			"canvas_y",
+			"canvas_x",
+			"canvas_scale",
+			"gui_context",
+			"ui_canvas",
+			"frame_y",
+			"frame_x",
+			"tmgui_frame",
+			"pixel_rect",
+			"recti",
+			"tm_resolve_axis",
+			"ACTIVE_STYLE"
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		},
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 24.0
+	},
+	"input":
+	{
+		"height": 97.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.55006723061,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.LSP Log Panel":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"output.Terminus":
+	{
+		"height": 74.0,
+		"history":
+		[
+		]
+	},
+	"output.diagnostics":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"output.exec":
+	{
+		"height": 62.0,
+		"history":
+		[
+		]
+	},
+	"output.find_results":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"output.mdpopups":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"pinned_build_system": "Packages/User/RaylibC.sublime-build",
+	"project": "tmgui_proj.sublime-project",
+	"replace":
+	{
+		"height": 44.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"build",
+				"C:\\Users\\theja\\AppData\\Roaming\\Sublime Text\\Packages\\User\\RaylibC.sublime-build"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+		"lsp_show_inlay_hints": false
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 168.0,
+	"status_bar_visible": false,
+	"template_settings":
+	{
+		"max_columns": 2
+	}
+}

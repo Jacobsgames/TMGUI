@@ -80,11 +80,15 @@ typedef struct {
     atlaspos corner_tr;
     atlaspos corner_bl;
     atlaspos corner_br;
-    atlaspos edge_horizontal;
-    atlaspos edge_vertical;
-    atlaspos cap_left;
-    atlaspos cap_right;
+    atlaspos edge_t;
+    atlaspos edge_b;
+    atlaspos edge_l;
+    atlaspos edge_r;
     atlaspos fill;
+    atlaspos cap_l;
+    atlaspos cap_r;
+    atlaspos strip;
+    
 } panel_kit;
 
 
@@ -115,29 +119,48 @@ typedef struct {
 } tm_theme;
 
 static const panel_kit KIT_DEFAULT = { 
-    .corner_tl = (atlaspos){15, 15},
-    .corner_tr = (atlaspos){15, 15},
-    .corner_bl = (atlaspos){15, 15},
-    .corner_br = (atlaspos){15, 15},
-    .edge_horizontal = (atlaspos){4, 12},
-    .edge_vertical   = (atlaspos){3, 11},
-    .cap_left  = (atlaspos){4, 11},
-    .cap_right = (atlaspos){3, 12},
-    .fill = (atlaspos){0, 0}
+ .corner_tl = (atlaspos){15, 15},
+ .corner_tr = (atlaspos){15, 11},
+ .corner_bl = (atlaspos){0, 12},
+ .corner_br = (atlaspos){9, 13},
+ .edge_t = (atlaspos){4, 12},
+ .edge_b = (atlaspos){4, 12},
+ .edge_l = (atlaspos){3, 11},
+ .edge_r = (atlaspos){3, 11},
+ .fill = (atlaspos){0, 0},
+ .cap_l = (atlaspos){10, 13},
+ .cap_r = (atlaspos){15, 11},
+ .strip = (atlaspos){14, 15},
 };
+
+static const panel_kit KIT_INDUSTRY = { 
+ .corner_tl = (atlaspos){15, 15},
+ .corner_tr = (atlaspos){15, 15},
+ .corner_bl = (atlaspos){15, 15},
+ .corner_br = (atlaspos){15, 15},
+ .edge_t = (atlaspos){15, 13},
+ .edge_b = (atlaspos){12, 13},
+ .edge_l = (atlaspos){13, 13},
+ .edge_r = (atlaspos){14, 13},  
+ .fill = (atlaspos){0, 0},
+ .cap_l = (atlaspos){14, 15},
+ .cap_r = (atlaspos){14, 15},
+ .strip = (atlaspos){13, 12},
+};
+
 
 static const tm_theme THEME_GREEN = {
     .font = { 0 },
-    .text = { GREEN, BLACK },
-    .label = { BLACK, GREEN },
+    .text = { LIGHTGRAY, BLACK },
+    .label = { BLACK, LIGHTGRAY },
     .button = {
-        .normal = { WHITE, DARKGREEN },
-        .hover  = { BLACK, GREEN },
-        .active = { GREEN, BLACK }
+        .normal = { WHITE, BLACK },
+        .hover  = { BLACK, LIGHTGRAY },
+        .active = { LIGHTGRAY, BLACK }
     },
     .panel = {
         .kit = KIT_DEFAULT,
-        .foreground = GREEN,
+        .foreground = LIGHTGRAY,
         .background = BLACK
     }
 };

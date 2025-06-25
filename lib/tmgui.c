@@ -4,18 +4,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-
-
+// - Canvas/Grid
 static int cell_w, cell_h;
-
-static tm_theme current_theme;
-static Font current_font = {0};
-static Font fallback_font = {0};
-static Texture2D glyph_atlas;
-
 static int canvas_scale, canvas_x, canvas_y;
 
+// - Layout
 layout_context gui_context = {0};
 
 static int layout_spacing = 0;
@@ -23,17 +16,18 @@ static int layout_padding = 0;
 static align_mode h_align = ALIGN_LEFT;
 static align_mode v_align = ALIGN_TOP;
 
+// - Theme
+static tm_theme current_theme;
+static Font current_font = {0};
+static Font fallback_font = {0};
+static Texture2D glyph_atlas;
 
-
+// - Devtools
 static bool show_tilepicker = false;
 
-// --- Transform ---
-void tm_update_transform(int scale, int pos_x, int pos_y) {
-    canvas_scale = scale;
-    canvas_x = pos_x;
-    canvas_y = pos_y;
-}
 
+
+// --- GRIDTOOLS ---------------------------------------------------------------------------------------
 
 Vector2 tm_mouse_grid(void) {
     Vector2 m = GetMousePosition();
@@ -42,7 +36,6 @@ Vector2 tm_mouse_grid(void) {
     return (Vector2){ pixel_rect / cell_w, py / cell_h };
 }
 
-// --- GRIDTOOLS ---
 static inline Rectangle grect_to_pixelrect(grect area) { // Converts a grect to a pixel-space Rectangle
     return (Rectangle){
         area.x * cell_w,
@@ -56,26 +49,23 @@ static inline grect grect_offset(grect area, int x_off, int y_off) { //returns a
     return (grect){ area.x + x_off, area.y + y_off, area.w, area.h };
 }
 
-// Relative offset of a CELL from a parent rect
+
 static inline grect offset_cell(grect parent, int dx, int dy) {
-    return CELL(parent.x + dx, parent.y + dy);
+    return CELL(parent.x + dx, parent.y + dy); // Relative offset of a CELL from a parent rect
 }
 
 static inline bool grect_valid(grect area) { //checks if a grect has valid size (eg above 0 x,y)
     return (area.w > 0 && area.h > 0);
 }
 
-
 static inline int pixels_to_grid_x(float pixels) { // Converts horizontal pixel distance to grid cells (X-axis)
     return (int)(pixels / (float)cell_w);
 }
-
 
 static inline int pixels_to_grid_y(float pixels) { // Converts vertical pixel distance to grid cells (Y-axis)
     return (int)(pixels / (float)cell_h);
 }
 
-// Replace gridpos_equal with rect position equality
 static inline bool cell_equal(grect a, grect b) {
     return (a.x == b.x && a.y == b.y);
 }
@@ -139,23 +129,28 @@ static grect get_area_and_txtpos(const char *text, grect area, grect *out_txtpos
 }
 
 
+// --- TRANSFORM HELPERS --------------------------------------------------------------------------
 
-// --- DRAW HELPERS ---
+void tm_update_transform(int scale, int pos_x, int pos_y) {
+    canvas_scale = scale;
+    canvas_x = pos_x;
+    canvas_y = pos_y;
+}
 
 
+// --- INIT ---------------------------------------------------------------------------------------
 
-// --- Init ---
 void tmgui_init(int cell_width, int cell_height) {
     cell_w = cell_width;
     cell_h = cell_height;
 
-    fallback_font = LoadFontEx("C:/Code/tmgui/fonts/FROGBLOCK.ttf", cell_h, NULL, 0);
+    fallback_font = LoadFontEx("C:/Code/tmgui/fonts/URSA.ttf", cell_h, NULL, 0);
     SetTextureFilter(fallback_font.texture, TEXTURE_FILTER_POINT);
 
     current_theme = THEME_GREEN;
     current_theme.font = fallback_font;
 
-    glyph_atlas = LoadTexture("C:/Code/tmgui/glyphs/T_FROGBLOCK.png");
+    glyph_atlas = LoadTexture("C:/Code/tmgui/glyphs/T_URSA.png");
     SetTextureFilter(glyph_atlas, TEXTURE_FILTER_POINT);
 }
 
@@ -164,7 +159,15 @@ void tmgui_shutdown(void) {
     UnloadTexture(glyph_atlas);
 }
 
-// --- Config ---
+static Font get_active_font(void) {
+    if (current_font.texture.id != 0) return current_font;
+    if (current_theme.font.texture.id != 0) return current_theme.font;
+    return fallback_font;
+}
+
+
+// --- LAYOUT SETTERS ---------------------------------------------------------------------------------------
+
 void tm_set_theme(const tm_theme *theme) {
     if (theme) current_theme = *theme;
 }
@@ -249,15 +252,10 @@ void tm_canvas_end(tm_canvas *c) {
         (Vector2){ 0, 0 }, 0, WHITE);
 }
 
-static Font get_active_font(void) {
-    if (current_font.texture.id != 0) return current_font;
-    if (current_theme.font.texture.id != 0) return current_theme.font;
-    return fallback_font;
-}
 
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-// --- Primitives ---//////////////////////////////////////////////
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+// --- DRAW PRIMITIVES ------------------------------------------------------------------------------------
 
 inline void tm_draw_fill_rect(grect area, Color color) {
     Rectangle px = grect_to_pixelrect(area);
@@ -308,12 +306,12 @@ void tm_draw_panel(grect r) {
     tm_draw_fill_rect(r, bg);
 
     if (r.h == 1) {
-        atlaspos left  = (kit->cap_left.x  >= 0) ? kit->cap_left  : kit->corner_tl;
-        atlaspos right = (kit->cap_right.x >= 0) ? kit->cap_right : kit->corner_tr;
+        atlaspos left  = (kit->cap_l.x  >= 0) ? kit->cap_l  : kit->corner_tl;
+        atlaspos right = (kit->cap_r.x >= 0) ? kit->cap_r : kit->corner_tr;
 
         tm_draw_glyph(grect_offset(r, 0, 0), left, fg, bg);
         for (int i = 1; i < r.w - 1; i++)
-            tm_draw_glyph(grect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
+            tm_draw_glyph(grect_offset(r, i, 0), kit->strip, fg, bg);
         if (r.w > 1)
             tm_draw_glyph(grect_offset(r, r.w - 1, 0), right, fg, bg);
         return;
@@ -327,14 +325,14 @@ void tm_draw_panel(grect r) {
 
     // Draw top and bottom edges
     for (int i = 1; i < r.w - 1; i++) {
-        tm_draw_glyph(grect_offset(r, i, 0), kit->edge_horizontal, fg, bg);
-        tm_draw_glyph(grect_offset(r, i, r.h - 1), kit->edge_horizontal, fg, bg);
+        tm_draw_glyph(grect_offset(r, i, 0), kit->edge_t, fg, bg);
+        tm_draw_glyph(grect_offset(r, i, r.h - 1), kit->edge_b, fg, bg);
     }
 
     // Draw left and right edges
     for (int j = 1; j < r.h - 1; j++) {
-        tm_draw_glyph(grect_offset(r, 0, j), kit->edge_vertical, fg, bg);
-        tm_draw_glyph(grect_offset(r, r.w - 1, j), kit->edge_vertical, fg, bg);
+        tm_draw_glyph(grect_offset(r, 0, j), kit->edge_l, fg, bg);
+        tm_draw_glyph(grect_offset(r, r.w - 1, j), kit->edge_r, fg, bg);
     }
 
     // Fill the interior
@@ -344,6 +342,9 @@ void tm_draw_panel(grect r) {
         }
     }
 }
+
+
+// --- LAYOUT ELEMENTS ------------------------------------------------------------------------------------
 
 grect tm_text(const char *text, grect area) {
     grect txtpos;
@@ -388,7 +389,6 @@ grect tm_label_panel(const char *text, grect area, int padding) {
     return final_area; 
 }
 
-
 /*bool tm_button(const char *label, grect r) { // WIP IGNORE
     Font use_font = get_active_font();
     Vector2 txt_px = MeasureTextEx(use_font, label, cell_h, 0);
@@ -420,16 +420,6 @@ grect tm_panel(grect area) {
     return final;
 }
 
-/*grect tm_label_panel(const char *text, grect area) {
-    grect final_area = tm_text(text, area);
-    tm_draw_panel(final_area);
-    tm_text(text, final_area);
-    return final_area;
-
-}*/
-
-
-
 grect tm_panel_titled(const char *text, grect area, int pad) {
     grect final_area = tm_panel(area);
 
@@ -447,9 +437,8 @@ grect tm_panel_titled(const char *text, grect area, int pad) {
     if (pad >= 1) {
         grect lcap_cell = CELL(textpos.x - 1, textpos.y);
         grect rcap_cell = CELL(textpos.x + strlen(text), textpos.y);
-
-        tm_draw_glyph(lcap_cell, current_theme.panel.kit.cap_left, current_theme.panel.foreground, current_theme.panel.background);
-        tm_draw_glyph(rcap_cell, current_theme.panel.kit.cap_right, current_theme.panel.foreground, current_theme.panel.background);
+        tm_draw_glyph(lcap_cell, current_theme.panel.kit.cap_l, current_theme.panel.foreground, current_theme.panel.background);
+        tm_draw_glyph(rcap_cell, current_theme.panel.kit.cap_r, current_theme.panel.foreground, current_theme.panel.background);
     }
 
     grect content_area = {
@@ -463,8 +452,9 @@ grect tm_panel_titled(const char *text, grect area, int pad) {
 }
 
 
-///////////////////////////////////////////////////
-// --- Layout ---/////////////////////////////////
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+// --- LAYOUT ---------------------------------------------------------------------------------------------
 grect tm_next_cell(int w, int h) {
     int x = gui_context.cursor_x;
     int y = gui_context.cursor_y;
@@ -489,7 +479,7 @@ void tm_hbox(grect area) {
     gui_context.container_h = area.h; // ← Set container width
 }
 
-
+// --- DEVTOOLS ---
 void glyph_tool(void) {
     int cols = glyph_atlas.width / cell_w, rows = glyph_atlas.height / cell_h;
     int ox = 65, oy = 64, tw = cell_w * 4, th = cell_h * 4;
@@ -497,9 +487,9 @@ void glyph_tool(void) {
     int tx = (m.x - ox) / tw, ty = (m.y - oy) / th;
 
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
-    DrawRectangle(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, BLACK);
-    DrawRectangleLines(ox - 1 * tw, oy - 1 * th, (cols + 2) * tw, (rows + 2) * th, GREEN);
-    DrawTextEx(fallback_font, "GLYPH TOOL", (Vector2){ ox-32, oy - th *2  }, th, 0, GREEN);
+    DrawRectangle(ox - tw, oy - th, (cols + 2) * tw, (rows + 2) * th, BLACK);
+    DrawRectangleLines(ox - tw, oy - th, (cols + 2) * tw, (rows + 2) * th, GREEN);
+    DrawTextEx(fallback_font, "GLYPH TOOL", (Vector2){ ox - 32, oy - 2 * th }, th, 0, GREEN);
 
     for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++) {
         Rectangle src = { x * cell_w, y * cell_h, cell_w, cell_h };
@@ -520,31 +510,32 @@ void glyph_tool(void) {
 
     typedef struct { char text[64]; int x, y; bool glyph; } Log;
     static Log log[256]; static int logc = 0;
-    static const char *parts[9] = {
+    static const char *parts[12] = {
         "corner_tl", "corner_tr", "corner_bl", "corner_br",
-        "edge_horizontal", "edge_vertical", "cap_left", "cap_right", "fill"
+        "edge_t", "edge_b", "edge_l", "edge_r", "fill", "cap_l", "cap_r", "strip"
     };
     static int sel = 0;
     static int preview_index = -1;
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        if (sel == 0 && logc < 255) {
+        if (sel == 0 && logc < 255)
             strncpy(log[logc++].text, ">>[New Set]--------------------------", 64);
-        }
-        if (tx >= 0 && tx < cols && ty >= 0 && ty < rows && sel < 9) {
+
+        if (tx >= 0 && tx < cols && ty >= 0 && ty < rows && sel < 12) {
             snprintf(log[logc].text, 64, " .%s = (atlaspos){%d, %d},", parts[sel], tx, ty);
             log[logc].x = tx; log[logc].y = ty; log[logc].glyph = true;
             printf("%s\n", log[logc].text); fflush(stdout);
             if (logc < 255) logc++;
             sel++;
         }
-        if (sel == 9) {
+
+        if (sel == 12) {
+            preview_index = logc - 12; // Set this BEFORE writing "Set Complete"
             if (logc < 255) {
                 strncpy(log[logc++].text, ">>[Set Complete]---------------------", 64);
                 log[logc - 1].glyph = false;
             }
             printf(">>[Set Complete]---------------------\n\n"); fflush(stdout);
-            preview_index = logc - 10;
             sel = 0;
         }
     }
@@ -552,7 +543,10 @@ void glyph_tool(void) {
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
         sel = 0;
         printf("[Selection Reset]\n"); fflush(stdout);
-        if (logc < 255) strncpy(log[logc++].text, "[Selection Reset]", 64), log[logc - 1].glyph = false;
+        if (logc < 255) {
+            strncpy(log[logc++].text, "[Selection Reset]", 64);
+            log[logc - 1].glyph = false;
+        }
     }
 
     int lx = ox + (cols + 1) * tw + tw;
@@ -580,15 +574,16 @@ void glyph_tool(void) {
 
     int show_preview = (sel > 0) ? (logc - sel) : preview_index;
     if (show_preview >= 0) {
-        int px = ox -28, py = oy + (rows + 2) * th -28;
+        int px = ox - 28, py = oy + (rows + 2) * th - 28;
         int pw = 3 * tw, ph = 4 * th;
         DrawRectangle(px - 4, py - 4, pw + 8, ph + 8, BLACK);
         DrawRectangleLines(px - 4, py - 4, pw + 8, ph + 8, GREEN);
 
+        // 3x3 panel preview
         int grid[3][3] = {
-            {0, 4, 1},
-            {5, 8, 5},
-            {2, 4, 3}
+            { 0, 4, 1 },  // corner_tl, edge_t, corner_tr
+            { 6, 8, 7 },  // edge_l,    fill,   edge_r
+            { 2, 5, 3 }   // corner_bl, edge_b, corner_br
         };
 
         for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++) {
@@ -600,27 +595,25 @@ void glyph_tool(void) {
             DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
         }
 
+        // cap_l / strip / cap_r preview
+        int strip_row[3] = { 9, 11, 10 }; // cap_l, strip, cap_r
         int strip_y = py + 3 * th + 4;
+
         for (int i = 0; i < 3; i++) {
-            int part = (i == 0) ? 6 : (i == 1) ? 4 : 7; // cap_left, fill, cap_right
+            int part = strip_row[i];
             int li = show_preview + part;
             if (li < 0 || li >= logc || !log[li].glyph) continue;
             Rectangle src = { log[li].x * cell_w, log[li].y * cell_h, cell_w, cell_h };
             Rectangle dst = { px + i * tw, strip_y, tw, th };
             DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
-}
+        }
     }
 }
 
 
-
-
-
-// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
-// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
-// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---// --- Main ---
-
-
+//---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+// --- TEST / MAIN -----------------------------------------------------------------------------------------------
 
 
 // Test font declarations (as per your request)
@@ -651,7 +644,7 @@ int main(void) {
 
     // Set a custom theme for the main UI
     tm_set_theme(&THEME_GREEN);
-    tm_set_font(&customfont0); // Use customfont0 as the primary UI font
+  
 
 
     while (!WindowShouldClose()) {
@@ -662,26 +655,27 @@ int main(void) {
     ClearBackground(BLACK); // A darker background to highlight UI elements
 
 
-    tm_set_spacing(0);
+    tm_set_spacing(1);
     ALIGN(LEFT, TOP);
 // --- Inside your main game loop, within tm_canvas_begin(&canvas) and tm_canvas_end(&canvas) ---
 
 // Assuming tm_set_spacing(1); and ALIGN(LEFT, TOP); are set at the start of your main loop iteration
 
 // --- Panel Frame A and B (Visual boundaries for Vbox A & B) ---
-tm_panel(RECT(0,0,13,45)); // list frame A
-tm_panel(RECT(12,0,13,45)); // list frame B
-ALIGN(RIGHT,TOP);
-tm_panel_titled("TITLE",RECT(24,32,56,16),2); // LOG frame
+tm_panel(RECT(0,0,14,45)); // list frame A
+tm_panel(RECT(13,0,13,45)); // list frame B
+
+tm_panel_titled("TITLE",RECT(25,32,56,16),2); // LOG frame
 ALIGN(LEFT,CENTER);
-tm_vbox(RECT(25,33,54,16));
-tm_label_panel("ACTIONS",AUTO,-1);
+tm_vbox(RECT(26,33,54,16));
+tm_label("", AUTO);
+tm_label_panel("ACTIONS",SIZE(9,3),-1);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 tm_text(">you ate the poopo bug", AUTO);
 
-tm_set_spacing(1);
+
 // --- VBOX A: List of Labels and Text (your original example) ---
 tm_vbox(RECT(1,1,11,45)); // This sets gui_context for elements in this Vbox
     
@@ -705,7 +699,7 @@ tm_vbox(RECT(1,1,11,45)); // This sets gui_context for elements in this Vbox
 
 // --- VBOX B: Panels with children (your expanded weirdos list) ---
 // This call *overwrites* gui_context, ending Vbox A's context and starting Vbox B's
-tm_vbox(RECT(13,1,14,45)); // start Vbox B. Increased width to 14 for content.
+tm_vbox(RECT(14 ,2,14,45)); // start Vbox B. Increased width to 14 for content.
     
     ALIGN(LEFT,TOP); // Alignment for elements *within* Vbox B
 
