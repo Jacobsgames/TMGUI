@@ -144,13 +144,13 @@ void tmgui_init(int cell_width, int cell_height) {
     cell_w = cell_width;
     cell_h = cell_height;
 
-    fallback_font = LoadFontEx("C:/Code/tmgui/fonts/URSA.ttf", cell_h, NULL, 0);
+    fallback_font = LoadFontEx("C:/Code/tmgui/fonts/BESCII.ttf", cell_h, NULL, 0);
     SetTextureFilter(fallback_font.texture, TEXTURE_FILTER_POINT);
 
     current_theme = THEME_GREEN;
     current_theme.font = fallback_font;
 
-    glyph_atlas = LoadTexture("C:/Code/tmgui/glyphs/T_URSA.png");
+    glyph_atlas = LoadTexture("C:/Code/tmgui/glyphs/T_jpetscii.png");
     SetTextureFilter(glyph_atlas, TEXTURE_FILTER_POINT);
 }
 
@@ -711,7 +711,7 @@ int main(void) {
 
 // --- Panel Frame A and B (Visual boundaries for Vbox A & B) ---
 tm_panel(RECT(0,0,14,45)); // list frame A
-tm_panel(RECT(13,0,13,45)); // list frame B
+tm_panel(RECT(12,0,13,45)); // list frame B
 
 tm_panel_titled("TITLE",RECT(25,32,56,16),2); // LOG frame
 ALIGN(LEFT,CENTER);
@@ -747,7 +747,7 @@ tm_vbox(RECT(1,1,11,45)); // This sets gui_context for elements in this Vbox
 
 // --- VBOX B: Panels with children (your expanded weirdos list) ---
 // This call *overwrites* gui_context, ending Vbox A's context and starting Vbox B's
-tm_vbox(RECT(14 ,2,14,45)); // start Vbox B. Increased width to 14 for content.
+tm_vbox(RECT(13 ,2,14,45)); // start Vbox B. Increased width to 14 for content.
     
     ALIGN(LEFT,TOP); // Alignment for elements *within* Vbox B
 
