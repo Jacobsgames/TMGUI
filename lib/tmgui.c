@@ -82,7 +82,7 @@ static inline grect rect_center_cell(grect area) {
     return CELL(area.x + area.w / 2, area.y + area.h / 2);
 }
 
-static grect get_area_and_txtpos(const char *text, grect area, grect *out_txtpos) { // I prefer comments inline like this.
+static grect get_area_and_txtpos(const char *text, grect area, grect *out_txtpos) { // THIS A BIT STINKY, ISSA BIG ONE. DOES A LOT
     
     int txt_w = strlen(text); // Calculate text width in grid cells (optimized for monospaced fonts)
 
@@ -113,8 +113,8 @@ static grect get_area_and_txtpos(const char *text, grect area, grect *out_txtpos
                 aligned_x += (gui_context.container_w - w);
             }
         }
-        // Note: Vertical alignment for the widget's position is not usually done in VBOX
-        // as tm_next_cell handles vertical stacking directly.
+        // Note: Vertical alignment for the widget's position is not usually
+        // done in VBOX as tm_next_cell handles vertical stacking directly.
         
         final = (grect){ aligned_x, base_pos.y, w, h }; // Construct final rect with aligned X
     } else { // If explicitly positioned (POS or RECT)
