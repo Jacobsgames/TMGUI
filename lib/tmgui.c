@@ -113,7 +113,7 @@ static grect get_area_and_txtpos(const char *text, grect area, grect *out_txtpos
                 aligned_x += (gui_context.container_w - w);
             }
         }
-        // Note: Vertical alignment for the widget's position is not usually
+        // Note: Vertical alignment for the widget's position is not usually.
         // done in VBOX as tm_next_cell handles vertical stacking directly.
         
         final = (grect){ aligned_x, base_pos.y, w, h }; // Construct final rect with aligned X
