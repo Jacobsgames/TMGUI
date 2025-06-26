@@ -1,8 +1,8 @@
 - add global padding func
 
-set Z index () - for defining layer out of scope/flow
 
-expand to handle top, bottom, left, right and 'strip'. and arrange to layout nice in preview (panel_kit)
+
+
 
 If you ever need popups/tooltips/floating panels, a separate tm_end_frame_late() call could be your go-to for "draw after everything else".
 

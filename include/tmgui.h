@@ -119,18 +119,18 @@ typedef struct {
 } tm_theme;
 
 static const panel_kit KIT_DEFAULT = { 
- .corner_tl = (atlaspos){15, 15},
- .corner_tr = (atlaspos){15, 11},
- .corner_bl = (atlaspos){0, 12},
- .corner_br = (atlaspos){9, 13},
+ .corner_tl = (atlaspos){10, 15},
+ .corner_tr = (atlaspos){10, 15},
+ .corner_bl = (atlaspos){10, 15},
+ .corner_br = (atlaspos){10, 15},
  .edge_t = (atlaspos){4, 12},
  .edge_b = (atlaspos){4, 12},
  .edge_l = (atlaspos){3, 11},
  .edge_r = (atlaspos){3, 11},
  .fill = (atlaspos){0, 0},
- .cap_l = (atlaspos){10, 13},
- .cap_r = (atlaspos){15, 11},
- .strip = (atlaspos){14, 15},
+ .cap_l = (atlaspos){9, 15},
+ .cap_r = (atlaspos){9, 15},
+ .strip = (atlaspos){4, 12},
 };
 
 static const panel_kit KIT_INDUSTRY = { 

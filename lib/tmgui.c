@@ -63,7 +63,7 @@ static inline int pixels_to_grid_x(float pixels) { // Converts horizontal pixel 
 }
 
 static inline int pixels_to_grid_y(float pixels) { // Converts vertical pixel distance to grid cells (Y-axis)
-    return (int)(pixels / (float)cell_h);
+    return (int)(pixels / (float)cell_h);   
 }
 
 static inline bool cell_equal(grect a, grect b) {
@@ -481,134 +481,182 @@ void tm_hbox(grect area) {
 
 // --- DEVTOOLS ---
 void glyph_tool(void) {
-    int cols = glyph_atlas.width / cell_w, rows = glyph_atlas.height / cell_h;
-    int ox = 65, oy = 64, tw = cell_w * 4, th = cell_h * 4;
-    Vector2 m = GetMousePosition();
-    int tx = (m.x - ox) / tw, ty = (m.y - oy) / th;
+    int atlas_columns = glyph_atlas.width / cell_w;
+    int atlas_rows = glyph_atlas.height / cell_h;
 
+    int grid_origin_x = 65;
+    int grid_origin_y = 64;
+
+    int glyph_draw_width = cell_w * 4;
+    int glyph_draw_height = cell_h * 4;
+
+    Vector2 mouse = GetMousePosition();
+    int hovered_cell_x = (mouse.x - grid_origin_x) / glyph_draw_width;
+    int hovered_cell_y = (mouse.y - grid_origin_y) / glyph_draw_height;
+
+    // Background
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
-    DrawRectangle(ox - tw, oy - th, (cols + 2) * tw, (rows + 2) * th, BLACK);
-    DrawRectangleLines(ox - tw, oy - th, (cols + 2) * tw, (rows + 2) * th, GREEN);
-    DrawTextEx(fallback_font, "GLYPH TOOL", (Vector2){ ox - 32, oy - 2 * th }, th, 0, GREEN);
 
-    for (int y = 0; y < rows; y++) for (int x = 0; x < cols; x++) {
-        Rectangle src = { x * cell_w, y * cell_h, cell_w, cell_h };
-        Rectangle dst = { ox + x * tw, oy + y * th, tw, th };
-        DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
-        DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, DARKGREEN);
-        if (x == tx && y == ty) {
-            BeginBlendMode(BLEND_MULTIPLIED);
-            DrawRectangle(dst.x, dst.y, dst.width, dst.height, GREEN);
-            EndBlendMode();
+    // Glyph Grid Bounds
+    DrawRectangle(grid_origin_x - glyph_draw_width, grid_origin_y - glyph_draw_height,
+                  (atlas_columns + 2) * glyph_draw_width, (atlas_rows + 2) * glyph_draw_height, BLACK);
+    DrawRectangleLines(grid_origin_x - glyph_draw_width, grid_origin_y - glyph_draw_height,
+                       (atlas_columns + 2) * glyph_draw_width, (atlas_rows + 2) * glyph_draw_height, GREEN);
+    DrawTextEx(fallback_font, "GLYPH TOOL",
+               (Vector2){ grid_origin_x - 32, grid_origin_y - 2 * glyph_draw_height },
+               glyph_draw_height, 0, GREEN);
+
+    // Draw all glyphs in grid
+    for (int cell_y = 0; cell_y < atlas_rows; cell_y++) {
+        for (int cell_x = 0; cell_x < atlas_columns; cell_x++) {
+            Rectangle src = { cell_x * cell_w, cell_y * cell_h, cell_w, cell_h };
+            Rectangle dst = { grid_origin_x + cell_x * glyph_draw_width,
+                              grid_origin_y + cell_y * glyph_draw_height,
+                              glyph_draw_width, glyph_draw_height };
+
+            DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+            DrawRectangleLines(dst.x, dst.y, dst.width, dst.height, DARKGREEN);
+
+            if (cell_x == hovered_cell_x && cell_y == hovered_cell_y) {
+                BeginBlendMode(BLEND_MULTIPLIED);
+                DrawRectangle(dst.x, dst.y, dst.width, dst.height, GREEN);
+                EndBlendMode();
+            }
         }
     }
 
-    if (tx >= 0 && tx < cols && ty >= 0 && ty < rows) {
-        char buf[32]; snprintf(buf, sizeof(buf), "[%d,%d]", tx, ty);
-        DrawTextEx(fallback_font, buf, (Vector2){ ox + (cols - 5) * tw, oy + (rows + 1) * th }, th, 0, GREEN);
+    // Draw hovered cell coordinates
+    if (hovered_cell_x >= 0 && hovered_cell_x < atlas_columns &&
+        hovered_cell_y >= 0 && hovered_cell_y < atlas_rows) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "[%d,%d]", hovered_cell_x, hovered_cell_y);
+        DrawTextEx(fallback_font, buf,
+                   (Vector2){ grid_origin_x + (atlas_columns - 5) * glyph_draw_width,
+                              grid_origin_y + (atlas_rows + 1) * glyph_draw_height },
+                   glyph_draw_height, 0, GREEN);
     }
 
     typedef struct { char text[64]; int x, y; bool glyph; } Log;
-    static Log log[256]; static int logc = 0;
-    static const char *parts[12] = {
+    static Log log[256];
+    static int log_count = 0;
+    static const char *part_names[12] = {
         "corner_tl", "corner_tr", "corner_bl", "corner_br",
-        "edge_t", "edge_b", "edge_l", "edge_r", "fill", "cap_l", "cap_r", "strip"
+        "edge_t", "edge_b", "edge_l", "edge_r",
+        "fill", "cap_l", "cap_r", "strip"
     };
-    static int sel = 0;
-    static int preview_index = -1;
+    static int selected_index = 0;
+    static int preview_start_index = -1;
 
+    // Left click to assign glyphs
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        if (sel == 0 && logc < 255)
-            strncpy(log[logc++].text, ">>[New Set]--------------------------", 64);
+        if (selected_index == 0 && log_count < 255)
+            strncpy(log[log_count++].text, ">>[New Set]--------------------------", 64);
 
-        if (tx >= 0 && tx < cols && ty >= 0 && ty < rows && sel < 12) {
-            snprintf(log[logc].text, 64, " .%s = (atlaspos){%d, %d},", parts[sel], tx, ty);
-            log[logc].x = tx; log[logc].y = ty; log[logc].glyph = true;
-            printf("%s\n", log[logc].text); fflush(stdout);
-            if (logc < 255) logc++;
-            sel++;
+        if (hovered_cell_x >= 0 && hovered_cell_x < atlas_columns &&
+            hovered_cell_y >= 0 && hovered_cell_y < atlas_rows && selected_index < 12) {
+
+            snprintf(log[log_count].text, 64, " .%s = (atlaspos){%d, %d},",
+                     part_names[selected_index], hovered_cell_x, hovered_cell_y);
+
+            ((atlaspos*)&current_theme.panel.kit)[selected_index] = (atlaspos){ hovered_cell_x, hovered_cell_y };
+
+            log[log_count].x = hovered_cell_x;
+            log[log_count].y = hovered_cell_y;
+            log[log_count].glyph = true;
+            printf("%s\n", log[log_count].text); fflush(stdout);
+            if (log_count < 255) log_count++;
+            selected_index++;
         }
 
-        if (sel == 12) {
-            preview_index = logc - 12; // Set this BEFORE writing "Set Complete"
-            if (logc < 255) {
-                strncpy(log[logc++].text, ">>[Set Complete]---------------------", 64);
-                log[logc - 1].glyph = false;
+        if (selected_index == 12) {
+            preview_start_index = log_count - 12;
+            if (log_count < 255) {
+                strncpy(log[log_count++].text, ">>[Set Complete]---------------------", 64);
+                log[log_count - 1].glyph = false;
             }
             printf(">>[Set Complete]---------------------\n\n"); fflush(stdout);
-            sel = 0;
+            selected_index = 0;
         }
     }
 
+    // Right click to reset selection
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-        sel = 0;
+        selected_index = 0;
         printf("[Selection Reset]\n"); fflush(stdout);
-        if (logc < 255) {
-            strncpy(log[logc++].text, "[Selection Reset]", 64);
-            log[logc - 1].glyph = false;
+        if (log_count < 255) {
+            strncpy(log[log_count++].text, "[Selection Reset]", 64);
+            log[log_count - 1].glyph = false;
         }
     }
 
-    int lx = ox + (cols + 1) * tw + tw;
-    int ly = oy - 2 * th;
-    int lw = 22 * tw;
-    int line_h = th / 2;
-    int raw_lh = GetScreenHeight() - 6;
-    int lh = (raw_lh / line_h) * line_h;
+    // Log viewer panel
+    int log_x = grid_origin_x + (atlas_columns + 1) * glyph_draw_width + glyph_draw_width;
+    int log_y = grid_origin_y - 2 * glyph_draw_height;
+    int log_width = 22 * glyph_draw_width;
+    int line_height = glyph_draw_height / 2;
+    int visible_log_height = (GetScreenHeight() - 6) / line_height * line_height;
 
-    DrawRectangle(lx, ly, lw, lh, BLACK);
-    DrawRectangleLines(lx, ly, lw, lh, GREEN);
+    DrawRectangle(log_x, log_y, log_width, visible_log_height, BLACK);
+    DrawRectangleLines(log_x, log_y, log_width, visible_log_height, GREEN);
 
-    int vis = lh / line_h;
-    int start = logc > vis - 2 ? logc - (vis - 2) : 0;
+    int visible_entries = visible_log_height / line_height;
+    int scroll_start = (log_count > visible_entries - 2) ? (log_count - (visible_entries - 2)) : 0;
 
-    for (int i = start, j = 0; i < logc; i++, j++) {
-        Vector2 p = { lx + tw, ly + (j + 2) * line_h };
-        DrawTextEx(fallback_font, log[i].text, p, line_h, 0, GREEN);
+    for (int i = scroll_start, visible_index = 0; i < log_count; i++, visible_index++) {
+        Vector2 pos = { log_x + glyph_draw_width, log_y + (visible_index + 2) * line_height };
+        DrawTextEx(fallback_font, log[i].text, pos, line_height, 0, GREEN);
+
         if (log[i].glyph) {
             Rectangle src = { log[i].x * cell_w, log[i].y * cell_h, cell_w, cell_h };
-            Rectangle dst = { lx + 4, p.y, tw / 2, line_h };
+            Rectangle dst = { log_x + 4, pos.y, glyph_draw_width / 2, line_height };
             DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
         }
     }
 
-    int show_preview = (sel > 0) ? (logc - sel) : preview_index;
-    if (show_preview >= 0) {
-        int px = ox - 28, py = oy + (rows + 2) * th - 28;
-        int pw = 3 * tw, ph = 4 * th;
-        DrawRectangle(px - 4, py - 4, pw + 8, ph + 8, BLACK);
-        DrawRectangleLines(px - 4, py - 4, pw + 8, ph + 8, GREEN);
+    // Preview panel
+    int preview_start = (selected_index > 0) ? (log_count - selected_index) : preview_start_index;
+    if (preview_start >= 0) {
+        int preview_x = grid_origin_x - 28;
+        int preview_y = grid_origin_y + (atlas_rows + 2) * glyph_draw_height - 28;
+        int preview_width = 3 * glyph_draw_width;
+        int preview_height = 4 * glyph_draw_height;
 
-        // 3x3 panel preview
-        int grid[3][3] = {
-            { 0, 4, 1 },  // corner_tl, edge_t, corner_tr
-            { 6, 8, 7 },  // edge_l,    fill,   edge_r
-            { 2, 5, 3 }   // corner_bl, edge_b, corner_br
+        DrawRectangle(preview_x - 4, preview_y - 4, preview_width + 8, preview_height + 8, BLACK);
+        DrawRectangleLines(preview_x - 4, preview_y - 4, preview_width + 8, preview_height + 8, GREEN);
+
+        int grid_index[3][3] = {
+            { 0, 4, 1 },
+            { 6, 8, 7 },
+            { 2, 5, 3 }
         };
 
-        for (int y = 0; y < 3; y++) for (int x = 0; x < 3; x++) {
-            int i = grid[y][x];
-            int li = show_preview + i;
-            if (li < 0 || li >= logc || !log[li].glyph) continue;
-            Rectangle src = { log[li].x * cell_w, log[li].y * cell_h, cell_w, cell_h };
-            Rectangle dst = { px + x * tw, py + y * th, tw, th };
-            DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                int part_index = grid_index[y][x];
+                int log_index = preview_start + part_index;
+                if (log_index < 0 || log_index >= log_count || !log[log_index].glyph) continue;
+                Rectangle src = { log[log_index].x * cell_w, log[log_index].y * cell_h, cell_w, cell_h };
+                Rectangle dst = { preview_x + x * glyph_draw_width, preview_y + y * glyph_draw_height,
+                                  glyph_draw_width, glyph_draw_height };
+                DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
+            }
         }
 
-        // cap_l / strip / cap_r preview
-        int strip_row[3] = { 9, 11, 10 }; // cap_l, strip, cap_r
-        int strip_y = py + 3 * th + 4;
+        // Strip row: cap_l, strip, cap_r
+        int strip_parts[3] = { 9, 11, 10 };
+        int strip_y = preview_y + 3 * glyph_draw_height + 4;
 
         for (int i = 0; i < 3; i++) {
-            int part = strip_row[i];
-            int li = show_preview + part;
-            if (li < 0 || li >= logc || !log[li].glyph) continue;
-            Rectangle src = { log[li].x * cell_w, log[li].y * cell_h, cell_w, cell_h };
-            Rectangle dst = { px + i * tw, strip_y, tw, th };
+            int part = strip_parts[i];
+            int log_index = preview_start + part;
+            if (log_index < 0 || log_index >= log_count || !log[log_index].glyph) continue;
+            Rectangle src = { log[log_index].x * cell_w, log[log_index].y * cell_h, cell_w, cell_h };
+            Rectangle dst = { preview_x + i * glyph_draw_width, strip_y, glyph_draw_width, glyph_draw_height };
             DrawTexturePro(glyph_atlas, src, dst, (Vector2){0}, 0, WHITE);
         }
     }
 }
+
 
 
 //---------------------------------------------------------------------------------------------------------
@@ -624,7 +672,7 @@ Font customfont2;
 
 
 int main(void) {
-    
+
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     int cw = 8, ch = 8, gw = 80, gh = 47; // Full 80x47 grid screen
