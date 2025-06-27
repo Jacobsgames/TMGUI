@@ -1,6 +1,0 @@
-CompileFlags:
-  Add:
-    -I.
-    -IC:/Code/tmgui/include
-    -IC:/Code/libs/Raylib/include
-    -DPLATFORM_DESKTOP
