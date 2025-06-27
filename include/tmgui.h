@@ -2,7 +2,9 @@
 #define TMGUI_H
 #include "raylib.h"
 
-// --- Grid Rect ---
+
+// Grid Rect, a rectangle in grid (int) space.
+//4 components - x position, y position, w width, h height
 typedef struct { int x, y, w, h; } grect;
 
 // --- Offscreen Canvas ---
@@ -14,7 +16,8 @@ typedef struct {
 	bool transparent;
 } tm_canvas;
 
-// --- Layout Mode ---
+// Container Layout Mode,
+//Used by vbox/hbox to flag its mode
 typedef enum { LAYOUT_NONE, LAYOUT_HBOX, LAYOUT_VBOX } layout_mode;
 
 typedef enum {
